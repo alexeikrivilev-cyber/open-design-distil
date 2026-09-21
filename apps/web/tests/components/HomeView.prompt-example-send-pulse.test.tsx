@@ -16,22 +16,22 @@ import { createPluginUseHandoff } from '../../src/components/home-hero/plugin-au
 import { I18nProvider } from '../../src/i18n';
 import { writeHomeGuideStage } from '../../src/components/home-hero/firstRunGuide';
 
-const WEB_PROTOTYPE_PLUGIN = {
-  id: 'example-web-prototype',
-  title: 'Web Prototype',
+const DECK_PLUGIN = {
+  id: 'example-simple-deck',
+  title: 'Simple Deck',
   version: '0.1.0',
   trust: 'bundled' as const,
   sourceKind: 'bundled' as const,
-  source: '/tmp/web-prototype',
+  source: '/tmp/simple-deck',
   capabilitiesGranted: ['prompt:inject'],
-  fsPath: '/tmp/web-prototype',
+  fsPath: '/tmp/simple-deck',
   installedAt: 0,
   updatedAt: 0,
   manifest: {
-    name: 'example-web-prototype',
-    title: 'Web Prototype',
+    name: 'example-simple-deck',
+    title: 'Simple Deck',
     version: '0.1.0',
-    description: 'General-purpose desktop web prototype.',
+    description: 'Creates an editable slide deck.',
     od: { kind: 'scenario', taskKind: 'new-generation' },
   },
 };
@@ -43,13 +43,13 @@ afterEach(() => {
 });
 
 const REQUIRED_INPUT_PLUGIN = {
-  ...WEB_PROTOTYPE_PLUGIN,
+  ...DECK_PLUGIN,
   id: 'required-input-plugin',
   title: 'Required Input Plugin',
   source: '/tmp/required-input',
   fsPath: '/tmp/required-input',
   manifest: {
-    ...WEB_PROTOTYPE_PLUGIN.manifest,
+    ...DECK_PLUGIN.manifest,
     name: 'required-input-plugin',
     title: 'Required Input Plugin',
     od: {
@@ -108,7 +108,7 @@ describe('static prompt-example send pulse', () => {
     writeHomeGuideStage('done');
     vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => {
       if (typeof url === 'string' && url === '/api/plugins') {
-        return new Response(JSON.stringify({ plugins: [WEB_PROTOTYPE_PLUGIN] }), {
+        return new Response(JSON.stringify({ plugins: [DECK_PLUGIN] }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
@@ -130,7 +130,7 @@ describe('static prompt-example send pulse', () => {
     // composer footer's radial Template picker.
     // The chip's default plugin exists (so the chip binds) but no plugin
     // matches the example filter → fallback static prompt-example cards.
-    await pickHomeTemplate('prototype');
+    await pickHomeTemplate('deck');
     const exampleCards = await screen.findAllByTestId('home-hero-prompt-example');
     const firstExample = exampleCards[0];
     if (!firstExample) throw new Error('expected at least one prompt-example card');

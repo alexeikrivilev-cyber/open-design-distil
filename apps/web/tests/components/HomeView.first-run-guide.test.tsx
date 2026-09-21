@@ -66,7 +66,7 @@ describe('Home first-run guide trail', () => {
     renderHome([]);
 
     expect(readHomeGuideStage()).toBe('chip');
-    await pickHomeTemplate('prototype');
+    await pickHomeTemplate('deck');
     expect(readHomeGuideStage()).not.toBe('chip');
   });
 
@@ -116,7 +116,7 @@ describe('Home first-run guide trail', () => {
 
     // The user clicks a chip while projects are still loading — the stage
     // moves to 'card' before we know whether they are new.
-    await pickHomeTemplate('prototype');
+    await pickHomeTemplate('deck');
     expect(readHomeGuideStage()).toBe('card');
 
     // Loading resolves: existing user. The stage must close so no chip's
@@ -136,26 +136,26 @@ describe('Home first-run guide trail', () => {
     });
   });
 
-  it('carries a default prototype straight to beat 2 through the static prompt-example fallback', async () => {
+  it('carries a default deck straight to beat 2 through the static prompt-example fallback', async () => {
     // The chip's default plugin exists (so the chip binds) but nothing
     // matches the example filter — the chip renders static prompt-example
     // cards, and the guide's beat 2 must land on the first of those.
     const WEB_PROTOTYPE_PLUGIN = {
-      id: 'example-web-prototype',
-      title: 'Web Prototype',
+      id: 'example-simple-deck',
+      title: 'Simple Deck',
       version: '0.1.0',
       trust: 'bundled' as const,
       sourceKind: 'bundled' as const,
-      source: '/tmp/web-prototype',
+      source: '/tmp/simple-deck',
       capabilitiesGranted: ['prompt:inject'],
-      fsPath: '/tmp/web-prototype',
+      fsPath: '/tmp/simple-deck',
       installedAt: 0,
       updatedAt: 0,
       manifest: {
-        name: 'example-web-prototype',
-        title: 'Web Prototype',
+        name: 'example-simple-deck',
+        title: 'Simple Deck',
         version: '0.1.0',
-        description: 'General-purpose desktop web prototype.',
+        description: 'Creates an editable slide deck.',
         od: { kind: 'scenario', taskKind: 'new-generation' },
       },
     };
@@ -172,7 +172,7 @@ describe('Home first-run guide trail', () => {
 
     // Home no longer seeds a default type; beat 1 is the pick itself, and beat
     // 2 then lands on the first static prompt-example card under it.
-    await pickHomeTemplate('prototype');
+    await pickHomeTemplate('deck');
     const exampleCards = await screen.findAllByTestId('home-hero-prompt-example');
     await waitFor(
       () => {

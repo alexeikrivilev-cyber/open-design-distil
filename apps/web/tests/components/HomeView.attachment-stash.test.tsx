@@ -53,14 +53,13 @@ function stubPluginsFetch() {
   }));
 }
 
-function renderHome(variant: 'page' | 'dock' = 'page', strict = false) {
+function renderHome(strict = false) {
   writeHomeGuideStage('done');
   stubPluginsFetch();
   const tree = (
     <I18nProvider initial="en">
       <HomeView
         projects={[]}
-        variant={variant}
         onSubmit={() => Promise.resolve(true)}
         onOpenProject={() => undefined}
       />
@@ -88,7 +87,7 @@ describe('home composer attachment stash', () => {
     // stay-on-pending-until-timeout path, where Home mounts fresh).
     stashHomeComposerAttachments([new File(['brief'], 'brief.txt', { type: 'text/plain' })]);
 
-    renderHome('page', true);
+    renderHome(true);
 
     const band = await screen.findByTestId('home-hero-staged-files');
     expect(band.textContent).toContain('brief.txt');
@@ -120,21 +119,4 @@ describe('home composer attachment stash', () => {
     expect(screen.queryByTestId('home-hero-staged-files')).toBeNull();
   });
 
-  it('does not let a non-page surface consume the page composer hand-off', async () => {
-    const file = new File(['brief'], 'brief.txt', { type: 'text/plain' });
-    stashHomeComposerAttachments([file]);
-
-    renderHome('dock');
-
-    await screen.findByTestId('home-hero-input');
-    expect(screen.queryByTestId('home-hero-staged-files')).toBeNull();
-    expect(peekHomeComposerAttachments()).toEqual([file]);
-
-    // Nor while mounted: the event is addressed to the page composer only.
-    act(() => {
-      stashHomeComposerAttachments([file]);
-    });
-    expect(screen.queryByTestId('home-hero-staged-files')).toBeNull();
-    expect(peekHomeComposerAttachments()).toEqual([file]);
-  });
 });

@@ -283,8 +283,8 @@ function tabFromRoute(route: Route, timestamp = Date.now()): WorkspaceChromeTab 
       lastActiveAt: timestamp,
     };
   }
-  if (route.kind === 'marketplace' || route.kind === 'marketplace-detail') {
-    const pluginId = route.kind === 'marketplace-detail' ? route.pluginId : null;
+  if (route.kind === 'marketplace-detail') {
+    const pluginId = route.pluginId;
     return {
       id: `marketplace:${pluginId ?? 'index'}:${nowId()}`,
       kind: 'marketplace',
@@ -308,7 +308,7 @@ function routeForTab(tab: WorkspaceChromeTab): Route {
   if (tab.kind === 'marketplace') {
     return tab.pluginId
       ? { kind: 'marketplace-detail', pluginId: tab.pluginId }
-      : { kind: 'marketplace' };
+      : { kind: 'home', view: 'plugins' };
   }
   return { kind: 'home', view: tab.view };
 }
@@ -996,7 +996,7 @@ export function WorkspaceTabsBar({
   const activeChromeTab = state.tabs.find((tab) => tab.id === state.activeTabId);
   // The pinned entry tab renders only a flat rail-toggle whenever it's active —
   // the sidebar toggle on Home, the Home button in every other entry section
-  // (settings / all-projects / community / design-systems). In ALL of these the
+  // (settings / all-projects / design-systems). In ALL of these the
   // glide pill must not park its filled "active tab" surface over it, so key off
   // `kind === 'entry'` rather than the Home view alone (which left the pill
   // filling the button in the other sections).
@@ -2515,7 +2515,7 @@ export function WorkspaceTabsBar({
                   </svg>
                 </button>
               ) : isPinned && active ? (
-                /* Any other entry section (settings / all-projects / community /
+                /* Any other entry section (settings / all-projects /
                    design-systems …): the logo reads as Home; clicking returns
                    home. */
                 <button
@@ -2542,7 +2542,7 @@ export function WorkspaceTabsBar({
                   >
                     <span className="workspace-tab__icon" aria-hidden>
                       {/* The pinned entry tab remembers its last section
-                          (settings / community / …), but clicking it always
+                          (settings / …), but clicking it always
                           lands on home (openTab), so it must read as the Home
                           button — the brand logo — not the remembered
                           section's icon. */}
@@ -2800,7 +2800,6 @@ function displayTabFor(
     library: 'Library',
     brands: t('entry.navBrands'),
     integrations: t('entry.navIntegrations'),
-    community: t('pluginsHome.title'),
     drafts: t('entry.navDrafts'),
     'all-projects': t('entry.navAllProjects'),
     members: t('entry.navMembers'),
@@ -2818,7 +2817,6 @@ function displayTabFor(
     library: 'image',
     brands: 'blocks',
     integrations: 'link',
-    community: 'globe',
     drafts: 'file',
     'all-projects': 'folder',
     members: 'users',

@@ -697,7 +697,7 @@ describe('EntryShell new project rail', () => {
     await waitFor(() => expect(onCreateProject).toHaveBeenCalledTimes(1));
     expect(onCreateProject).toHaveBeenCalledWith(expect.objectContaining({
       skillId: null,
-      metadata: expect.objectContaining({ kind: 'prototype' }),
+        metadata: expect.objectContaining({ kind: 'deck' }),
     }));
   });
 });

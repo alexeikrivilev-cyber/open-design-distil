@@ -188,7 +188,7 @@ On first load, the app detects the available local runtimes and also offers BYOK
 
 The **Design systems** catalog is loaded from the `DESIGN.md` packages in [`design-systems/`](design-systems/). Pick one to apply that brand's visual language to the artifact.
 
-The **Templates** catalog comes from [`design-templates/`](design-templates/) and groups artifact formats for prototypes, decks, documents, images, video, and audio. [`skills/`](skills/) is reserved for functional capabilities that the agent invokes while it works. Pair a template with a design system to produce an artifact in the chosen visual language.
+The **Templates** catalog comes from [`design-templates/`](design-templates/). The distilled Home path currently promotes deck templates and image assets; legacy artifact templates remain in the repository only while their registry/runtime dependencies are being mapped. [`skills/`](skills/) is reserved for functional capabilities that the agent invokes while it works. Pair a template with a design system to produce an artifact in the chosen visual language.
 
 ## Other scripts
 
@@ -215,7 +215,7 @@ During local development, `tools-dev` starts the daemon first, passes its port i
 
 ## Media generation / agent dispatcher checks
 
-Image, video, audio, and HyperFrames skills call the local `od` CLI through environment variables injected by the daemon when it spawns an agent:
+Image skills call the local `od` CLI through environment variables injected by the daemon when it spawns an agent. Legacy video/audio/HyperFrames runtime support remains outside the distilled Home surface until its shared-provider dependencies are mapped:
 
 - `OD_BIN` — absolute path to `apps/daemon/dist/cli.js`.
 - `OD_DAEMON_URL` — the running daemon URL.
@@ -324,7 +324,7 @@ open-design/
 ├── tools/dev/                 # `pnpm tools-dev` lifecycle and inspect CLI
 ├── e2e/                       # Playwright UI + external integration/Vitest harness
 ├── skills/                    # functional capabilities invoked mid-task
-├── design-templates/          # rendering catalog for prototypes, decks, docs, and media
+├── design-templates/          # active deck/image starters plus legacy registry entries
 ├── design-systems/            # brand packages rooted at DESIGN.md
 ├── scripts/sync-design-systems.ts    # re-import from upstream getdesign tarball
 ├── docs/                      # product vision + spec
@@ -356,4 +356,4 @@ This Quickstart is the runnable seed of the spec in [`docs/`](docs/). The spec d
 - `docs/architecture.md` describes the shipped stack: Next.js 16 App Router in front, local daemon behind it, and `apps/web/next.config.ts` rewrites in dev to keep the browser talking to the same `/api` surface.
 - `docs/skills-protocol.md` describes the current `SKILL.md`/`od:` frontmatter and the split between functional skills and rendering templates. The parser and normalization source of truth is `apps/daemon/src/skills.ts`.
 - `docs/agent-adapters.md` describes the adapter contract. Runtime-specific launch, argument, model, and stream settings live in `apps/daemon/src/runtimes/defs/`, with registration in `apps/daemon/src/runtimes/registry.ts`; `apps/daemon/src/agents.ts` is a compatibility export surface.
-- `docs/modes.md` distinguishes the six New Project tabs from the seven normalized registry modes (`prototype`, `deck`, `template`, `design-system`, `image`, `video`, and `audio`).
+- `docs/modes.md` describes the upstream registry modes. For this fork, the active Home creation boundary is `deck | image`; consult [`INVENTORY.md`](INVENTORY.md) before removing legacy runtime modes because existing projects and shared providers may still reference them.

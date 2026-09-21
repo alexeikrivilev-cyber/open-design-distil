@@ -54,22 +54,22 @@ function stubPluginsFetch(plugins: unknown[] = []) {
   }));
 }
 
-const WEB_PROTOTYPE_PLUGIN = {
-  id: 'example-web-prototype',
-  title: 'Web Prototype',
+const DECK_PLUGIN = {
+  id: 'example-simple-deck',
+  title: 'Simple Deck',
   version: '0.1.0',
   trust: 'bundled' as const,
   sourceKind: 'bundled' as const,
-  source: '/tmp/web-prototype',
+  source: '/tmp/simple-deck',
   capabilitiesGranted: ['prompt:inject'],
-  fsPath: '/tmp/web-prototype',
+  fsPath: '/tmp/simple-deck',
   installedAt: 0,
   updatedAt: 0,
   manifest: {
-    name: 'example-web-prototype',
-    title: 'Web Prototype',
+    name: 'example-simple-deck',
+    title: 'Simple Deck',
     version: '0.1.0',
-    description: 'General-purpose desktop web prototype.',
+    description: 'Creates an editable slide deck.',
     od: { kind: 'scenario', taskKind: 'new-generation' },
   },
 };
@@ -224,11 +224,11 @@ describe('home composer sending state', () => {
       .mockResolvedValueOnce(true);
 
     writeHomeGuideStage('done');
-    // The prototype rail binds the example plugin, so its apply roundtrip
+    // The deck rail binds the example plugin, so its apply roundtrip
     // must succeed for submit() to reach onSubmit.
     vi.stubGlobal('fetch', vi.fn(async (url: RequestInfo | URL) => {
       if (typeof url === 'string' && url === '/api/plugins') {
-        return new Response(JSON.stringify({ plugins: [WEB_PROTOTYPE_PLUGIN] }), {
+        return new Response(JSON.stringify({ plugins: [DECK_PLUGIN] }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
@@ -253,7 +253,7 @@ describe('home composer sending state', () => {
 
     // Seeding through a fallback prompt-example card is what arms the
     // examplePromptContext marker; the type comes from the row under the composer.
-    await pickHomeTemplate('prototype');
+    await pickHomeTemplate('deck');
     const exampleCards = await screen.findAllByTestId('home-hero-prompt-example');
     fireEvent.click(exampleCards[0]!);
 

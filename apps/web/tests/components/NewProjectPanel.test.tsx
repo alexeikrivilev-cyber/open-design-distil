@@ -175,44 +175,6 @@ describe('NewProjectPanel design system defaults', () => {
     });
   });
 
-  it('preserves prototype fidelity across tab switches and saves it into the create payload', () => {
-    const onCreate = vi.fn();
-    render(
-      <NewProjectPanel
-        skills={skills}
-        designSystems={designSystems}
-        defaultDesignSystemId="clay"
-        templates={[]}
-        onDeleteTemplate={vi.fn()}
-        promptTemplates={[]}
-        onCreate={onCreate}
-      />,
-    );
-
-    fireEvent.change(screen.getByTestId('new-project-name'), {
-      target: { value: 'Wireframe fidelity payload' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Wireframe' }));
-    expect(screen.getByRole('button', { name: 'Wireframe' }).getAttribute('aria-pressed')).toBe('true');
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Slide deck' }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Prototype' }));
-    expect(screen.getByRole('button', { name: 'Wireframe' }).getAttribute('aria-pressed')).toBe('true');
-
-    fireEvent.click(screen.getByTestId('create-project'));
-
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Wireframe fidelity payload',
-        designSystemId: 'clay',
-        metadata: expect.objectContaining({
-          kind: 'prototype',
-          fidelity: 'wireframe',
-        }),
-      }),
-    );
-  });
-
   it('does not persist OS widgets metadata for web-only platform targets', () => {
     const onCreate = vi.fn();
     render(
@@ -220,9 +182,10 @@ describe('NewProjectPanel design system defaults', () => {
         skills={skills}
         designSystems={designSystems}
         defaultDesignSystemId="clay"
-        templates={[]}
+        templates={templates}
         promptTemplates={[]}
         onCreate={onCreate}
+        initialTab="template"
       />,
     );
 
@@ -253,6 +216,7 @@ describe('NewProjectPanel design system defaults', () => {
         templates={[]}
         promptTemplates={[]}
         onCreate={vi.fn()}
+        initialTab="template"
       />,
     );
 
@@ -298,72 +262,6 @@ describe('NewProjectPanel design system defaults', () => {
         designSystemId: null,
         metadata: expect.not.objectContaining({
           inspirationDesignSystemIds: expect.anything(),
-        }),
-      }),
-    );
-  });
-
-  it('falls back to the generated default title when the prototype name is blank', () => {
-    const onCreate = vi.fn();
-    render(
-      <NewProjectPanel
-        skills={skills}
-        designSystems={designSystems}
-        defaultDesignSystemId={null}
-        templates={[]}
-        onDeleteTemplate={vi.fn()}
-        promptTemplates={[]}
-        onCreate={onCreate}
-      />,
-    );
-
-    fireEvent.change(screen.getByTestId('new-project-name'), {
-      target: { value: '   ' },
-    });
-    fireEvent.click(screen.getByTestId('create-project'));
-
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: expect.stringMatching(/^Prototype\b/),
-        metadata: expect.objectContaining({
-          kind: 'prototype',
-          fidelity: 'high-fidelity',
-        }),
-      }),
-    );
-  });
-
-  it('saves live artifact creation with prototype kind, live-artifact intent, and locked high fidelity', () => {
-    const onCreate = vi.fn();
-    render(
-      <NewProjectPanel
-        skills={skills}
-        designSystems={designSystems}
-        defaultDesignSystemId="clay"
-        templates={[]}
-        onDeleteTemplate={vi.fn()}
-        promptTemplates={[]}
-        onCreate={onCreate}
-        connectors={[]}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Live artifact' }));
-    fireEvent.change(screen.getByTestId('new-project-name'), {
-      target: { value: 'Realtime artifact payload' },
-    });
-    // Live artifact hides the fidelity picker — wireframe live artifacts
-    // don't make sense, so the surface is locked to high-fidelity.
-    expect(screen.queryByRole('button', { name: 'Wireframe' })).toBeNull();
-    fireEvent.click(screen.getByTestId('create-project'));
-
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Realtime artifact payload',
-        metadata: expect.objectContaining({
-          kind: 'prototype',
-          intent: 'live-artifact',
-          fidelity: 'high-fidelity',
         }),
       }),
     );
@@ -493,208 +391,6 @@ describe('NewProjectPanel design system defaults', () => {
     );
   });
 
-  it('saves video creation with the selected aspect and duration metadata', () => {
-    const onCreate = vi.fn();
-    render(
-      <NewProjectPanel
-        skills={skills}
-        designSystems={designSystems}
-        defaultDesignSystemId="clay"
-        templates={[]}
-        onDeleteTemplate={vi.fn()}
-        promptTemplates={[]}
-        onCreate={onCreate}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Media' }));
-    fireEvent.click(screen.getByTestId('new-project-media-surface-video'));
-    fireEvent.change(screen.getByTestId('new-project-name'), {
-      target: { value: 'Video payload metadata' },
-    });
-    fireEvent.click(screen.getByRole('radio', { name: '9:16' }));
-    fireEvent.change(screen.getByLabelText('Length'), {
-      target: { value: '10' },
-    });
-    fireEvent.click(screen.getByTestId('create-project'));
-
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Video payload metadata',
-        designSystemId: null,
-        metadata: expect.objectContaining({
-          kind: 'video',
-          videoModel: 'doubao-seedance-2-0-260128',
-          videoAspect: '9:16',
-          videoLength: 10,
-        }),
-      }),
-    );
-  });
-
-  it('saves audio creation with the selected duration and trimmed voice metadata', () => {
-    const onCreate = vi.fn();
-    render(
-      <NewProjectPanel
-        skills={skills}
-        designSystems={designSystems}
-        defaultDesignSystemId="clay"
-        templates={[]}
-        onDeleteTemplate={vi.fn()}
-        promptTemplates={[]}
-        onCreate={onCreate}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Media' }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Audio' }));
-    fireEvent.change(screen.getByTestId('new-project-name'), {
-      target: { value: 'Audio payload metadata' },
-    });
-    fireEvent.change(screen.getByLabelText('Duration'), {
-      target: { value: '30' },
-    });
-    fireEvent.change(screen.getByPlaceholderText('Provider voice id, optional'), {
-      target: { value: '  soft contralto guide  ' },
-    });
-    fireEvent.click(screen.getByTestId('create-project'));
-
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Audio payload metadata',
-        designSystemId: null,
-        metadata: expect.objectContaining({
-          kind: 'audio',
-          audioKind: 'speech',
-          audioModel: 'minimax-tts',
-          audioDuration: 30,
-          voice: 'soft contralto guide',
-        }),
-      }),
-    );
-  });
-
-  it('exposes sound effects audio projects and switches to the ElevenLabs SFX model', () => {
-    const onCreate = vi.fn();
-    render(
-      <NewProjectPanel
-        skills={skills}
-        designSystems={designSystems}
-        defaultDesignSystemId="clay"
-        templates={[]}
-        onDeleteTemplate={vi.fn()}
-        promptTemplates={[]}
-        onCreate={onCreate}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Media' }));
-    fireEvent.click(screen.getByRole('tab', { name: 'Audio' }));
-    expect(screen.getByRole('button', { name: 'SFX' })).toBeTruthy();
-    fireEvent.change(screen.getByTestId('new-project-name'), {
-      target: { value: 'Impact sound payload' },
-    });
-    fireEvent.change(screen.getByLabelText('Duration'), {
-      target: { value: '120' },
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'SFX' }));
-    expect(screen.getByTestId('model-picker-trigger').textContent).toContain('elevenlabs-sfx');
-    expect(screen.queryByPlaceholderText('Provider voice id, optional')).toBeNull();
-    const durationSelect = screen.getByLabelText('Duration') as HTMLSelectElement;
-    expect(Array.from(durationSelect.options).map((option) => option.value)).toEqual(['5', '10', '15', '30']);
-    expect(durationSelect.value).toBe('30');
-
-    fireEvent.click(screen.getByTestId('create-project'));
-
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'Impact sound payload',
-        designSystemId: null,
-        metadata: expect.objectContaining({
-          kind: 'audio',
-          audioKind: 'sfx',
-          audioModel: 'elevenlabs-sfx',
-          audioDuration: 30,
-        }),
-      }),
-    );
-    expect(onCreate.mock.calls[0]?.[0].metadata).not.toHaveProperty('voice');
-  });
-
-  it('pins skillId to hyperframes when the video model is hyperframes-html, regardless of skill discovery order', () => {
-    // Reproduces PR #866 mrcfps's reported regression: when daemon `readdir()`
-    // returns video skills in an order that puts `video-shortform` ahead of
-    // `hyperframes`, the previous `list[0]?.id` fallback would route the
-    // HyperFrames-HTML model through `video-shortform`, dropping the
-    // hyperframes SKILL body and the html-in-canvas preflight. The fix forces
-    // the create-time skillId to `hyperframes` whenever `hyperframes-html` is
-    // the chosen model.
-    const onCreate = vi.fn();
-    const videoSkills: SkillSummary[] = [
-      {
-        id: 'video-shortform',
-        name: 'Video shortform',
-        description: 'Shortform video skill',
-        mode: 'video',
-        surface: 'video',
-        previewType: 'video',
-        designSystemRequired: false,
-        defaultFor: [],
-        triggers: [],
-        upstream: null,
-        hasBody: true,
-        examplePrompt: '',
-        aggregatesExamples: false,
-      },
-      {
-        id: 'hyperframes',
-        name: 'HyperFrames',
-        description: 'HTML-in-canvas video',
-        mode: 'video',
-        surface: 'video',
-        previewType: 'video',
-        designSystemRequired: false,
-        defaultFor: [],
-        triggers: [],
-        upstream: null,
-        hasBody: true,
-        examplePrompt: '',
-        aggregatesExamples: false,
-      },
-    ];
-
-    render(
-      <NewProjectPanel
-        skills={videoSkills}
-        designSystems={designSystems}
-        defaultDesignSystemId="clay"
-        templates={[]}
-        onDeleteTemplate={vi.fn()}
-        promptTemplates={[]}
-        onCreate={onCreate}
-      />,
-    );
-
-    fireEvent.click(screen.getByRole('tab', { name: 'Media' }));
-    fireEvent.click(screen.getByTestId('new-project-media-surface-video'));
-    fireEvent.click(screen.getByTestId('model-picker-trigger'));
-    fireEvent.click(screen.getByTestId('model-picker-option-hyperframes-html'));
-    fireEvent.change(screen.getByTestId('new-project-name'), {
-      target: { value: 'HyperFrames routing' },
-    });
-    fireEvent.click(screen.getByTestId('create-project'));
-
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({
-        name: 'HyperFrames routing',
-        skillId: 'hyperframes',
-        metadata: expect.objectContaining({
-          kind: 'video',
-          videoModel: 'hyperframes-html',
-        }),
-      }),
-    );
-  });
 });
 
 describe('NewProjectPanel working directory picker', () => {
@@ -1011,21 +707,6 @@ describe('NewProjectPanel start-from rail', () => {
     examplePrompt: '',
     aggregatesExamples: false,
   };
-  const prototypeTemplate: SkillSummary = {
-    id: 'saas-landing',
-    name: 'SaaS landing',
-    description: 'SaaS landing page template',
-    mode: 'prototype',
-    surface: 'web',
-    previewType: 'html',
-    designSystemRequired: true,
-    defaultFor: [],
-    triggers: [],
-    upstream: null,
-    hasBody: true,
-    examplePrompt: '',
-    aggregatesExamples: false,
-  };
   const deckSkill: SkillSummary = {
     id: 'simple-deck',
     name: 'Simple deck',
@@ -1042,38 +723,47 @@ describe('NewProjectPanel start-from rail', () => {
     aggregatesExamples: false,
   };
 
-  function renderPanel(onCreate = vi.fn()) {
+  function renderPanel(
+    onCreate = vi.fn(),
+    initialTab: 'prototype' | 'deck' = 'deck',
+  ) {
     render(
       <NewProjectPanel
         skills={[...skills, deckSkill]}
-        designTemplates={[deckTemplate, prototypeTemplate]}
+        designTemplates={[deckTemplate]}
         designSystems={designSystems}
         defaultDesignSystemId={null}
         templates={[]}
         onDeleteTemplate={vi.fn()}
         promptTemplates={[]}
         onCreate={onCreate}
+        initialTab={initialTab}
       />,
     );
     return onCreate;
   }
 
-  it('shows a Blank-first rail scoped to the tab mode and defaults create to the tab skill', () => {
-    const onCreate = renderPanel();
+  it('keeps the visible creation surface small and defaults deck creation to Blank', () => {
+    const onCreate = renderPanel(vi.fn(), 'prototype');
+
+    expect(screen.getByTestId('new-project-tab-deck')).toBeTruthy();
+    expect(screen.getByTestId('new-project-tab-template')).toBeTruthy();
+    expect(screen.getByTestId('new-project-tab-media')).toBeTruthy();
+    expect(screen.queryByTestId('new-project-tab-prototype')).toBeNull();
+    expect(screen.queryByTestId('new-project-tab-live-artifact')).toBeNull();
+    expect(screen.queryByTestId('new-project-tab-other')).toBeNull();
 
     const blank = screen.getByTestId('newproj-start-blank');
     expect(blank.getAttribute('aria-checked')).toBe('true');
     // Blank card renders before any template card inside the rail.
     const row = blank.parentElement!;
     expect(row.firstElementChild).toBe(blank);
-    // Prototype tab only offers prototype-mode templates.
-    expect(screen.getByTestId('newproj-start-saas-landing')).toBeTruthy();
-    expect(screen.queryByTestId('newproj-start-html-ppt-pitch-deck')).toBeNull();
+    expect(screen.getByTestId('newproj-start-html-ppt-pitch-deck')).toBeTruthy();
 
     fireEvent.click(screen.getByTestId('create-project'));
     expect(onCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        skillId: 'prototype-skill',
+        skillId: 'simple-deck',
         skillSelectionProvenance: 'automatic-default',
       }),
     );
@@ -1082,9 +772,9 @@ describe('NewProjectPanel start-from rail', () => {
   it('routes create through the picked design template', () => {
     const onCreate = renderPanel();
 
-    fireEvent.click(screen.getByTestId('newproj-start-saas-landing'));
+    fireEvent.click(screen.getByTestId('newproj-start-html-ppt-pitch-deck'));
     expect(
-      screen.getByTestId('newproj-start-saas-landing').getAttribute('aria-checked'),
+      screen.getByTestId('newproj-start-html-ppt-pitch-deck').getAttribute('aria-checked'),
     ).toBe('true');
     expect(
       screen.getByTestId('newproj-start-blank').getAttribute('aria-checked'),
@@ -1093,28 +783,15 @@ describe('NewProjectPanel start-from rail', () => {
     fireEvent.click(screen.getByTestId('create-project'));
     expect(onCreate).toHaveBeenCalledWith(
       expect.objectContaining({
-        skillId: 'saas-landing',
+        skillId: 'html-ppt-pitch-deck',
         skillSelectionProvenance: 'explicit-user',
       }),
     );
   });
 
-  it('resets to Blank when switching tabs so a pick never leaks across scenarios', () => {
+  it('normalizes legacy initial tabs to the supported deck surface', () => {
     const onCreate = renderPanel();
-
-    fireEvent.click(screen.getByTestId('newproj-start-saas-landing'));
-    fireEvent.click(screen.getByRole('tab', { name: 'Slide deck' }));
-
-    // Deck tab shows its own rail: blank first, deck templates only.
-    expect(
-      screen.getByTestId('newproj-start-blank').getAttribute('aria-checked'),
-    ).toBe('true');
-    expect(screen.getByTestId('newproj-start-html-ppt-pitch-deck')).toBeTruthy();
-    expect(screen.queryByTestId('newproj-start-saas-landing')).toBeNull();
-
-    fireEvent.click(screen.getByTestId('create-project'));
-    expect(onCreate).toHaveBeenCalledWith(
-      expect.objectContaining({ skillId: 'simple-deck' }),
-    );
+    expect(screen.getByRole('tab', { name: 'Slide deck' })).toHaveAttribute('aria-selected', 'true');
+    expect(onCreate).not.toHaveBeenCalled();
   });
 });

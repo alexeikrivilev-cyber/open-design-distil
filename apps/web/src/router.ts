@@ -20,11 +20,8 @@ export type EntryHomeView =
   | 'library'
   | 'brands'
   | 'integrations'
-  // Team-edition navigation-shell destinations. `community` is the shared
-  // template gallery surfaced as a rail destination (rather than only a home
-  // sub-section); the rest are team-workspace slots (project spaces + members +
+  // Team-edition navigation-shell destinations (project spaces + members +
   // board + workspace settings) whose views are provided by other lanes.
-  | 'community'
   | 'drafts'
   | 'all-projects'
   | 'members'
@@ -62,15 +59,12 @@ export type Route =
       conversationId?: string | null;
       fileName: string | null;
     }
-  | { kind: 'marketplace' }
   | { kind: 'marketplace-detail'; pluginId: string }
   // Team collaboration demo surface. Drives the live presence + sync loop
   // against the real daemon routes with a clearly-stubbed demo identity (real
   // B identity / D visibility integration pending). Deep-linkable so a second
   // browser tab can join the same project and appear in the presence overlay.
-  | { kind: 'collab-demo'; projectId: string | null }
-  // Community template gallery — browse and remix shared design templates.
-  | { kind: 'community' };
+  | { kind: 'collab-demo'; projectId: string | null };
 
 export function parseRoute(pathname: string): Route {
   const parts = pathname.replace(/\/+$/, '').split('/').filter(Boolean);
@@ -141,9 +135,9 @@ export function parseRoute(pathname: string): Route {
     return { kind: 'collab-demo', projectId: parts[1] ? decodeURIComponent(parts[1]) : null };
   }
   if (parts[0] === 'community') {
-    // Community is now a rail destination inside the entry shell so the nav rail
-    // stays visible alongside the gallery.
-    return { kind: 'home', view: 'community' };
+    // The remote community gallery is no longer a product surface. Keep the
+    // old URL harmless for bookmarks by returning to the retained Home shell.
+    return { kind: 'home', view: 'home' };
   }
   if (parts[0] === 'drafts' && !parts[1]) {
     return { kind: 'home', view: 'drafts' };
@@ -160,16 +154,17 @@ export function parseRoute(pathname: string): Route {
   if (parts[0] === 'workspace-settings' && !parts[1]) {
     return { kind: 'home', view: 'workspace-settings' };
   }
-  // Phase 2B / spec §11.6 — marketplace deep UI routes. Two paths:
-  //   /marketplace            → catalog grid (MarketplaceView)
-  //   /marketplace/<pluginId> → detail page (PluginDetailView)
-  // Aliases to /plugins remain reserved for the public site (spec §13);
-  // in-app we keep /marketplace canonical.
-  if (parts[0] === 'marketplace' || parts[0] === 'plugins') {
+  // The old standalone marketplace index is retired; keep its root URL as a
+  // compatibility alias for the retained local Plugins/Skills catalog.
+  // Detail URLs remain stable because plugin share links use them.
+  if (parts[0] === 'marketplace') {
     if (parts[1]) {
       return { kind: 'marketplace-detail', pluginId: decodeURIComponent(parts[1]) };
     }
-    return { kind: 'marketplace' };
+    return { kind: 'home', view: 'plugins' };
+  }
+  if (parts[0] === 'plugins' && parts[1]) {
+    return { kind: 'marketplace-detail', pluginId: decodeURIComponent(parts[1]) };
   }
   return { kind: 'home', view: 'home' };
 }
@@ -186,7 +181,6 @@ export function buildPath(route: Route): string {
       return route.brandId ? `/brands/${encodeURIComponent(route.brandId)}` : '/brands';
     }
     if (route.view === 'integrations') return '/integrations';
-    if (route.view === 'community') return '/community';
     if (route.view === 'drafts') return '/drafts';
     if (route.view === 'all-projects') return '/all-projects';
     if (route.view === 'members') return '/members';
@@ -195,12 +189,10 @@ export function buildPath(route: Route): string {
     if (route.view === 'settings') return '/settings';
     return '/';
   }
-  if (route.kind === 'marketplace') return '/marketplace';
   if (route.kind === 'marketplace-detail') return `/marketplace/${encodeURIComponent(route.pluginId)}`;
   if (route.kind === 'collab-demo') {
     return route.projectId ? `/collab-demo/${encodeURIComponent(route.projectId)}` : '/collab-demo';
   }
-  if (route.kind === 'community') return '/community';
   if (route.kind === 'design-system-create') return '/design-systems/create';
   if (route.kind === 'design-system-detail') {
     return `/design-systems/${encodeURIComponent(route.designSystemId)}`;

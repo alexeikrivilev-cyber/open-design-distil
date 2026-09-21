@@ -33,20 +33,20 @@
 
 ---
 
-## What is OpenDesign
+## What is OpenDesign Distil
 
-🎨 **The open-source Claude Design alternative.** &nbsp;🖥️ **Local-first native desktop app for macOS and Windows.** &nbsp;⚡ **Composable skills, brand-grade `DESIGN.md` design systems, and ready-to-use plugins.** &nbsp;🖼️ Generates **web · desktop · mobile prototypes**, **live dashboards / artifacts**, **decks**, **images**, **video**, plus **HyperFrames** motion graphics. 🔒 Sandboxed iframe preview · HTML / PDF / PPTX / MP4 export. &nbsp;🤖 **Runs on DeepSeek Harness (`dsh`) · Claude Code · OpenClaw · Codex · Cursor · OpenCode · Qwen · Copilot · Amp · Hermes · Kimi · Antigravity and 26 distinct local CLI executables**, or any OpenAI-compatible endpoint via BYOK.
+🎨 **This fork is a focused presentation compiler foundation.** &nbsp;🖥️ **Local-first workspace with project persistence, design systems, assets, preview, skills, and export.** &nbsp;🖼️ The active Home path is intentionally small: **deck creation plus image assets**. Plugin/skill details, local templates, design-system selection, file staging, preview and existing export infrastructure remain because they are useful foundations for corporate presentations.
 
-OpenDesign is what you get when the **agent-native** loop Anthropic shipped with Claude Design — discover the brief, lock the direction, stream the artifact, critique, deliver — stops being closed and becomes a **filesystem of functional skills, rendering design templates, design systems, and plugins** that the coding agents already on your laptop can read, write, and remix. Your CLI becomes the design engine, your laptop becomes the studio, and your team's `DESIGN.md` becomes the brand contract.
+The fork is being distilled in reversible, dependency-aware batches. Community and Marketplace pages, the second Home composer, Prototype sub-types, and unrelated Home entry points are removed from the active product surface. Legacy runtime contracts are kept where they still support existing projects, local skills, assets, or persistence; they are not treated as new product scope.
 
-It's also the **Figma alternative for the agent era** — instead of pushing pixels on a canvas, it delivers single-page artifacts in real CSS, real fonts, real components, exported straight to HTML / PDF / PPTX / MP4 — already shaped by your design system, already runnable inside the agent you use every day.
+The target direction is a constrained presentation compiler: understand an arbitrary corporate PPTX template, plan a deck, generate controlled alternatives, review by exception, repair selectively, and export editable PPTX/PDF/HTML. The implementation of that pipeline begins only after the repository foundation is stabilized.
 
 
 ---
 
 ## Product tour
 
-A quick look at the core OpenDesign workflow. Start from **Home** with a brief, explore reusable skills in **Plugins**, and turn brand references into a **Design System**. Then enter a project's **Studio** to create and refine prototypes, decks, mobile apps, images, documents, and HyperFrames in one place.
+A quick look at the retained workspace foundation. Start from **Home** with a brief, choose a deck or image path, attach assets or a design system, and enter a project for preview and refinement. **Plugins/Skills** and **Design System** remain useful supporting surfaces; upstream artifact galleries below are historical reference while this fork is distilled.
 
 ### Core pages
 
@@ -72,9 +72,9 @@ A quick look at the core OpenDesign workflow. Start from **Home** with a brief, 
 </tr>
 </table>
 
-### Studio — many artifact types in one project
+### Studio — the retained workspace foundation
 
-Inside a project's Studio, the conversation, generated files, and live preview stay together across six artifact types:
+Inside a project's Studio, the conversation, generated files, and live preview stay together. The active distilled path is deck creation plus image assets; the additional screenshots below are historical upstream references retained while legacy runtime dependencies are mapped.
 
 <table>
 <tr>
@@ -151,13 +151,13 @@ Runtime definitions live in [`apps/daemon/src/runtimes/defs/`](apps/daemon/src/r
 
 ---
 
-## Demo
+## Reference gallery
 
-Four core product categories, all rendered by a coding agent running on your laptop. Click a thumbnail to see the real example.
+Historical OpenDesign examples rendered by a coding agent running on your laptop. They document reusable skills and templates; they are not additional Home entry points in this fork.
 
-### 1 · Prototypes — web · desktop · mobile
+### Historical · Prototypes — web · desktop · mobile
 
-The default output surface. Single-page HTML artifacts that read your `DESIGN.md` and render in a sandboxed iframe.
+Historical upstream output surface. Single-page HTML artifacts that read your `DESIGN.md` and render in a sandboxed iframe; the distilled Home path is deck/image.
 
 <table>
 <tr>
@@ -172,7 +172,7 @@ The default output surface. Single-page HTML artifacts that read your `DESIGN.md
 </tr>
 </table>
 
-### 2 · Live artifacts & dashboards
+### Historical · Live artifacts & dashboards
 
 Live dashboards, decision rooms, KPI walls — single-page artifacts that pull data through a tweaks panel and stay editable in place.
 
@@ -199,7 +199,7 @@ Live dashboards, decision rooms, KPI walls — single-page artifacts that pull d
 </tr>
 </table>
 
-### 3 · Decks — magazine decks, weekly updates, pitches
+### Active foundation · Decks — magazine decks, weekly updates, pitches
 
 <table>
 <tr>
@@ -216,7 +216,7 @@ Live dashboards, decision rooms, KPI walls — single-page artifacts that pull d
 
 Every deck exports to **HTML** (single file, inlined assets), **PDF** (browser print, deck-aware), **PPTX** (agent-driven skill), **ZIP** (archive), or **Markdown**.
 
-### 4 · Images — `gpt-image-2`, ImageRouter, custom API
+### Active foundation · Images — `gpt-image-2`, ImageRouter, custom API
 
 <table>
 <tr>
@@ -230,7 +230,7 @@ Every deck exports to **HTML** (single file, inlined assets), **PDF** (browser p
 
 **93 ready-to-replicate prompts** live in [`prompt-templates/`](prompt-templates/) — preview thumbnails, full prompt body, target model, aspect ratio, and source attribution. One click drops a brief into the composer.
 
-### 5 · Video & HyperFrames — agent-native motion graphics
+### Historical · Video & HyperFrames — agent-native motion graphics
 
 **[HyperFrames][hyperframes]** is HeyGen's open-source, agent-native video framework, integrated as a first-class citizen in OpenDesign. The agent writes HTML + CSS + GSAP, and HyperFrames renders it to a deterministic MP4 via headless Chrome + FFmpeg. Pair it with **Seedance 2.0** for cinematic t2v / i2v, **Veo 3 / Sora 2 / Kling 2** for routed model variants, and **Suno v5 / Lyria 2** for the audio layer.
 
@@ -410,7 +410,7 @@ od skills list --json
 
 **100+ functional skills ship in [`skills/`](skills/)**. Each follows the Agent Skills [`SKILL.md`][skill] convention and supplies reusable agent behavior, references, or utilities. Renderable starters live separately in [`design-templates/`](design-templates/); they may also use `SKILL.md`, but they populate the design-template catalog rather than the functional-skill registry.
 
-Two **modes** anchor the design-template catalog: `prototype` (web/mobile/desktop single-page artifacts) and `deck` (horizontal-swipe presentations). Other templates cover `image`, `video`, `audio`, and utility surfaces. The **`scenario`** field groups templates by audience: `design` · `marketing` · `operation` · `engineering` · `product` · `finance` · `hr` · `sale` · `personal`.
+The distilled product promotes `deck` and `image` templates. Legacy `prototype`, `video`, and `audio` entries remain in the repository only while registry and persistence dependencies are mapped; they are not active Home/create entry points. The **`scenario`** field groups templates by audience: `design` · `marketing` · `operation` · `engineering` · `product` · `finance` · `hr` · `sale` · `personal`.
 
 | Design template | Mode | Scenario | What it produces |
 |---|---|---|---|
@@ -498,7 +498,7 @@ Also [`plugins/community/`](plugins/community/) for community plugins and [`plug
 
 Plugins are at full parity across the **web UI** and the **`od` CLI** — same `/api/plugins` endpoints, pick whichever fits.
 
-**In the desktop / web app:** open the **Plugin** page to browse the marketplace and click **Install**; inside a project's Studio, plugins appear as composer chips you click to apply (with the inputs they declare).
+**In the desktop / web app:** open the **Plugins** page to browse the retained local skills/catalog and manage sources; inside a project's Studio, supported plugins appear as composer context and detail actions. The public Community/Marketplace pages are not part of this distilled fork.
 
 **On the command line** (runs without a UI — this is the path external agents use):
 
@@ -623,7 +623,9 @@ Phased delivery → [`docs/roadmap.md`](docs/roadmap.md).
 
 ---
 
-## Community
+## Upstream community reference
+
+The public in-app Community gallery is not part of the distilled product surface. The links below are retained only as upstream project and contribution history.
 
 Real people behind every channel.
 

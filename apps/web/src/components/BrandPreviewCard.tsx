@@ -96,7 +96,7 @@ export function BrandPreviewCard({
           body: JSON.stringify({ designSystemId }),
         });
       }
-      requestHomeChip('prototype');
+      requestHomeChip('deck');
       navigate({ kind: 'home', view: 'home' });
     } finally {
       setBusy(false);

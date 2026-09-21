@@ -17,7 +17,7 @@
 //     chrome row (WorkspaceTabsBar) and reach EntryShell through
 //     entryRailBridge events. `onOpenSearch` stays on the props as the
 //     shell-owned opener for callers that still hand it down.
-//   • 最近 (Recents) → home, Community → community.
+//   • 最近 (Recents) → home.
 //   • Team block (only when `context.workspaceType === 'team'`): an inline team
 //     switcher + the team destinations. In-client views: drafts / all projects /
 //     design systems / 扩展 (plugins). Member management lives in B's vela/web
@@ -1988,7 +1988,6 @@ export function EntryNavRail({
   // but renders down here. State, not a ref: the cluster has to re-render once
   // the node exists or the portal would have nowhere to land on first paint.
   const [accountHost, setAccountHost] = useState<HTMLDivElement | null>(null);
-  const communityLabel = t('pluginsHome.title');
   // #5517 renamed the rail's first item from 最近 (Recents) to 首页 (Home) —
   // the key keeps its historical name, the VALUE now reads Home in every
   // locale (polish round 2, ref 1db2d00c2).
@@ -2424,16 +2423,6 @@ export function EntryNavRail({
         >
           <Icon name="home" size={16} />
         </NavButton>
-        <NavButton
-          active={view === 'community'}
-          ariaLabel={communityLabel}
-          label={communityLabel}
-          onClick={() => selectView('community')}
-          testId="entry-nav-community"
-        >
-          <Icon name="globe" size={16} />
-        </NavButton>
-
         {context ? (
           <div className="entry-nav-rail__team-section">
             {/* 全部项目 is the ONE project destination (OPEND-3108): the page

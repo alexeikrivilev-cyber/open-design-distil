@@ -126,7 +126,7 @@ import {
   retryUnavailableAmrBalanceGate,
   type AmrBalanceGateScope,
 } from '../runtime/amr-balance-gate';
-import { HomeView, seedHomeComposerPrompt } from './HomeView';
+import { HomeView } from './HomeView';
 import { entryStrategyRoutingFields } from './entry-strategy-routing';
 import { EntryBlankState } from './EntryBlankState';
 import { RecentProjectsStrip, type ProjectCollectionScope } from './RecentProjectsStrip';
@@ -147,7 +147,6 @@ import {
   effectiveAgentModelId,
 } from './agentModelSelection';
 import { AgentIcon } from './AgentIcon';
-import { CommunityView } from './CommunityView';
 import { TeamSlotPlaceholder } from './TeamSlotPlaceholder';
 import {
   notifyTeamProjectsChanged,
@@ -197,10 +196,7 @@ import { ExtensionsMarketplace } from './PluginsView';
 import type { CreateInput, CreateTab, ImportClaudeDesignOutcome } from './NewProjectPanel';
 import type { PluginLoopSubmit } from './PluginLoopHome';
 import {
-  duplicatePluginAsProject,
-  patchProject,
   ProjectCreateError,
-  resolvedWorkspaceContextForWrite,
   type PluginShareAction,
   type PluginShareProjectOutcome,
 } from '../state/projects';
@@ -693,9 +689,8 @@ export function EntryShell({
   // The one shared workspace context. Any non-null context is a real workspace
   // (personal or team); workspace surfaces gate on B's permission bits, not on
   // workspaceType.
-  // The whole state (not just `context`) so workspace-scoped WRITES can go
-  // through `resolvedWorkspaceContextForWrite`, which refuses to collapse an
-  // unresolved or unavailable authority into an anonymous, unbound create.
+  // Keep the whole state (not just `context`) so workspace-scoped writes can
+  // fail closed while identity discovery is unresolved.
   const workspaceContextState = useWorkspaceContext();
   const { context: workspaceContext, loading: workspaceLoading } = workspaceContextState;
   const accountFooterState = resolveEntryRailAccountFooterState(
@@ -1138,8 +1133,7 @@ export function EntryShell({
   }
   // Workspace-only destinations. Personal and team workspaces both use these;
   // signed-out/local state falls back to home once the context has resolved.
-  // `community` is allowed in both states, so it is not guarded, and neither
-  // is `drafts` any more (OPEND-3140): without a workspace it is the local
+  // `drafts` is allowed in both states (OPEND-3140): without a workspace it is the local
   // project list — `buildDraftsList` folds to every local project — and the
   // rail's 项目 item opens it on both branches.
   const isWorkspaceOnlyView =
@@ -1791,11 +1785,8 @@ export function EntryShell({
     />
   );
 
-  // Everything a HomeView needs except which surface it is on. Home renders
-  // one as the page; the community view docks a second at its bottom, and both
-  // must submit through the SAME handlers — a docked composer that created
-  // projects down a second path would drift from Home's the first time either
-  // changed.
+  // Everything a HomeView needs except which surface it is on. Home owns the
+  // single composer for the retained entry shell.
   const homeViewProps = {
     projects: homeProjectsList,
     projectsLoading,
@@ -1932,10 +1923,7 @@ export function EntryShell({
                 {...homeViewProps}
                 isActive={view === 'home'}
                 /* Home is the one composer in the shell and consumes the page
-                   handoff. The community view used to dock a second HomeView
-                   (`variant="dock"`) with a handoff of its own; that mount
-                   was taken out (OPEND-2793) until phase three gives it a
-                   template-bound shape. */
+                   handoff. */
                 promptHandoff={homePromptHandoff}
                 executionSwitcher={view === 'home' ? homeExecutionSwitcher : undefined}
               />
@@ -2039,88 +2027,6 @@ export function EntryShell({
                 onPersistComposioKey={onPersistComposioKey}
                 onSkillsRefresh={onSkillsRefresh}
                 onSkillsChanged={onSkillsChanged}
-              />
-            ) : null}
-            {view === 'community' ? (
-              <CommunityView
-                onRemixTemplate={({ templateId, prompt }) => {
-                  // Remix carries the template's PROJECT along, not just its
-                  // prompt: duplicate the plugin's example artifact into a
-                  // fresh project (the same daemon flow as the plugin
-                  // gallery's 创建副本), seed the composer with the template
-                  // prompt for review, then open it on the copied entry file.
-                  // Templates without a duplicable artifact fall back to the
-                  // old prompt-only project.
-                  void (async () => {
-                    const name =
-                      summarizeProjectNameFromPrompt(prompt) || t('common.untitled');
-                    try {
-                      // One resolved authority for BOTH requests: the create
-                      // binds the copied project to this workspace, and the
-                      // seed patch is then authorized against that same
-                      // binding. A headerless create is read by the daemon as a
-                      // legacy caller and leaves the project bound to no
-                      // workspace at all, which is what kept remixed projects
-                      // out of the member's own 草稿 list.
-                      const writeContext =
-                        resolvedWorkspaceContextForWrite(workspaceContextState);
-                      const result = await duplicatePluginAsProject(
-                        templateId,
-                        { name },
-                        writeContext,
-                      );
-                      const seeded = await patchProject(
-                        result.projectId,
-                        { pendingPrompt: prompt },
-                        writeContext,
-                      );
-                      if (!seeded) {
-                        // The project itself exists and is bound — only the
-                        // prompt seed was refused. Keep the user on it
-                        // (retrying through the catch below would leave the
-                        // copy orphaned and create a second, empty project)
-                        // and surface the dropped seed instead of discarding
-                        // it silently.
-                        console.error('Community remix: could not seed the template prompt.');
-                      }
-                      await Promise.resolve(onOpenProject(result.projectId, result.relPath));
-                    } catch {
-                      await onCreateProject({
-                        name,
-                        skillId: null,
-                        designSystemId: null,
-                        metadata: { kind: 'other', nameSource: 'prompt' },
-                        pendingPrompt: prompt,
-                      });
-                    }
-                  })();
-                }}
-                onUsePrompt={(target) => {
-                  // Hands off to Home (OPEND-2793, product decision B): the
-                  // community view no longer docks a composer at its foot —
-                  // that bar had no relation to the gallery, the filters or
-                  // the card under it, and phase three will bring it back in
-                  // a template-bound shape. Same seed + binding pair the
-                  // standalone /community route in App.tsx uses, so Use
-                  // lands the prompt AND the plugin driver in Home's composer.
-                  seedHomeComposerPrompt(target.prompt);
-                  setHomePromptHandoff(createPluginUseHandoff(Date.now(), target.templateId, {
-                    action: 'use',
-                    chipId: target.chipId,
-                    projectKind: target.projectKind,
-                  }));
-                  changeView('home');
-                }}
-                // The gallery card's full details modal routes Use through the
-                // same Home hand-off the plugin library uses, so the plugin
-                // becomes the composer's active driver instead of only seeding
-                // prompt text.
-                onUsePlugin={(record, action, target) => {
-                  usePluginFromLibrary(record, action, {
-                    chipId: target.chipId,
-                    projectKind: target.projectKind,
-                  });
-                }}
               />
             ) : null}
             {/* Team destinations — the entry shell owns the nav frame only; each

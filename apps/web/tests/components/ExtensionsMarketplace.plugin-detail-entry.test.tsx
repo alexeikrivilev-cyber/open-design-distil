@@ -10,7 +10,6 @@ import { cleanup, fireEvent, render, screen, waitFor, within } from '@testing-li
 import { InstalledPluginRecordSchema } from '@open-design/contracts';
 
 import { ExtensionsMarketplace } from '../../src/components/PluginsView';
-import { MarketplaceView } from '../../src/components/MarketplaceView';
 import { PluginDetailView } from '../../src/components/PluginDetailView';
 import { I18nProvider } from '../../src/i18n';
 import { useRoute } from '../../src/router';
@@ -105,7 +104,6 @@ function MarketplaceRouteHarness() {
   if (route.kind === 'marketplace-detail') {
     return <PluginDetailView pluginId={route.pluginId} />;
   }
-  if (route.kind === 'marketplace') return <MarketplaceView />;
   return <ExtensionsMarketplace onCreatePlugin={vi.fn()} onUsePlugin={vi.fn()} />;
 }
 
@@ -198,14 +196,14 @@ describe('ExtensionsMarketplace installed plugin detail entry', () => {
     ).toBeTruthy();
   });
 
-  it('returns to the legacy marketplace when that was the detail source', async () => {
+  it('maps the retired marketplace root to the local plugins catalog', async () => {
     window.history.replaceState(null, '', '/marketplace');
     const { container } = renderHarness();
 
     fireEvent.click(
       await waitFor(() => {
         const card = container.querySelector<HTMLElement>(
-          '[data-plugin-id="build-test"]',
+          '[data-testid="plugins-card-official:open-design/build-test:0.1.0"]',
         );
         expect(card).toBeTruthy();
         return card!;
@@ -216,8 +214,10 @@ describe('ExtensionsMarketplace installed plugin detail entry', () => {
     fireEvent.click(screen.getByRole('button', { name: /back to list/i }));
 
     await waitFor(() => {
+      // Browser back returns to the compatibility alias, which now renders
+      // the local Plugins catalog rather than the retired standalone page.
       expect(window.location.pathname).toBe('/marketplace');
-      expect(container.querySelector('[data-testid="marketplace-view"]')).toBeTruthy();
+      expect(container.querySelector('.plugin-marketplace')).toBeTruthy();
     });
   });
 });

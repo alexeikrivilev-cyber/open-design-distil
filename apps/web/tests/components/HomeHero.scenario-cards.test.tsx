@@ -102,8 +102,8 @@ describe('HomeHero scenario cards', () => {
     expect(typePill('document')).toBeNull();
     expect(findChip('wireframe')).toBeUndefined();
     expect(findChip('mobile')).toBeUndefined();
-    expect(findChip('prototype')).toBeDefined();
-    expect(findChip('document')).toBeDefined();
+    expect(findChip('prototype')).toBeUndefined();
+    expect(findChip('document')).toBeUndefined();
   });
 
   it('keeps empty carousel scenario submit disabled while plugins are loading', async () => {
@@ -124,15 +124,14 @@ describe('HomeHero scenario cards', () => {
     expect(onSubmitScenario).not.toHaveBeenCalled();
   });
 
-  it('uses the nested Prototype scene to scope empty-composer carousel suggestions', async () => {
+  it('uses the selected deck to scope empty-composer carousel suggestions', async () => {
     placeholderCarouselMock.reportScenario = true;
     renderHero({
-      activeChipId: 'prototype',
-      activePrototypeSubtypeId: 'mobile',
+      activeChipId: 'deck',
     });
 
     await waitFor(() => {
-      expect(placeholderCarouselMock.reportedScenarioId).toBe('app-idea');
+      expect(placeholderCarouselMock.reportedScenarioId).toBe('notes-to-deck');
     });
   });
 });

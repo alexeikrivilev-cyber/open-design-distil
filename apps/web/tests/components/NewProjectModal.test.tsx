@@ -187,7 +187,7 @@ describe('NewProjectModal layout', () => {
 
     await waitFor(() => {
       expect(pickAndImportHostProject).toHaveBeenCalledWith({
-        skillId: 'prototype-skill',
+        skillId: null,
         workspaceContext: expect.objectContaining({
           workspaceId: 'workspace-modal',
           workspaceMemberId: 'member-modal',

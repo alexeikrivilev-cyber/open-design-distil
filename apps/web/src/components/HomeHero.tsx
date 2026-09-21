@@ -135,7 +135,7 @@ export interface ExamplePromptInfo {
 interface Props {
   workspaceContext?: WorkspaceCollabContext | null;
   active?: boolean;
-  // Arms the first-run guidance trail (prototype chip → first preset
+  // Arms the first-run guidance trail (deck chip → first preset
   // card sheen). Tri-state: true = brand-new user (no projects), false =
   // existing user, undefined = projects still loading — the guide neither
   // arms nor completes until the answer is known.
@@ -161,9 +161,6 @@ interface Props {
   activePluginIsExplicit?: boolean;
   activePluginRecord?: InstalledPluginRecord | null;
   activeChipId: string | null;
-  // Prototype's selected second-level scene is owned by HomeView so action
-  // metadata and persistence stay aligned with the visible filter selection.
-  activePrototypeSubtypeId?: string | null;
   onClearActivePlugin: () => void;
   onClearActiveChip?: () => void;
   activeSkillId?: string | null;
@@ -246,24 +243,6 @@ interface Props {
   // the composer card — before the template section — so a brand-new user sees
   // their recommended entry without scrolling.
   recommendationSlot?: ReactNode;
-  /**
-   * `page` is Home's own full column — headline, composer, type row, examples.
-   * `dock` is the composer ALONE, for surfaces that want Home's input without
-   * Home's page (the community view's bottom bar). Everything the composer
-   * itself does — @mentions, staged files, the working-directory row, submit —
-   * is identical between the two; only the page furniture around it differs.
-   */
-  variant?: 'page' | 'dock';
-  /**
-   * Dock only: bump this to fold the bar back to its collapsed default. The
-   * community view raises it on every tab change (per product: tab 之间的切换
-   * 的时候这个输入框默认是收起来的) — the gallery under the bar has become a
-   * different gallery, so the bar goes back to its resting state instead of
-   * staying open over content the user has not looked at yet. A counter rather
-   * than a boolean: two folds in a row are two distinct events, and a flag
-   * would need clearing to fire twice.
-   */
-  collapseSignal?: number;
 }
 
 type HomeMentionTab = 'all' | 'files' | 'plugins' | 'skills' | 'mcp' | 'connectors';
@@ -290,14 +269,6 @@ const FULL_WIDTH_TRAILING_PUNCTUATION = /[？！。，、；：）】」』]$/u;
  *  locale whose `homeHero.title` has no `{word}` renders as a plain sentence,
  *  which is what the 17 non-Chinese ones do today. */
 const TITLE_WORD_SLOT = '{word}';
-/** Separator for `homeHero.titleWords`, the comma-separated list the headline
- *  cycles through. One key rather than a set of chip labels because grammar is
- *  per-language: Chinese takes the composer's own singular type names
- *  (「设计点文档」), English needs plurals for the sentence to read at all
- *  ("Let’s create wireframes?" — "a Image" is what article-splicing gets
- *  you). Each locale therefore owns both halves of its own sentence. */
-const TITLE_WORD_SEPARATOR = ',';
-
 function endsWithFullWidthPunctuation(value: string): boolean {
   return FULL_WIDTH_TRAILING_PUNCTUATION.test(value.trim());
 }
@@ -405,7 +376,6 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
     onPickMcp = () => undefined,
     onPickConnector = () => undefined,
     onPickChip,
-    activePrototypeSubtypeId,
     contextItemCount,
     error,
     showActivePluginChip = true,
@@ -419,17 +389,11 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
     onStartBlankProject,
     executionSwitcher,
     recommendationSlot,
-    variant = 'page',
-    collapseSignal,
   },
   ref,
 ) {
   const { locale, t } = useI18n();
   const analytics = useAnalytics();
-  // Docked = the composer without Home's page around it. Read in the render
-  // below to drop the furniture (headline, type row, example grid) rather than
-  // to change how the composer itself behaves.
-  const isDock = variant === 'dock';
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [mentionTab, setMentionTab] = useState<HomeMentionTab>('all');
   const [hoveredPlugin, setHoveredPlugin] = useState<InstalledPluginRecord | null>(null);
@@ -438,20 +402,6 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
   // border-beam's own active/fading contract so blur fades the light out over
   // 0.5s instead of cutting it; `fading` clears when that keyframe ends.
   const [beamPhase, setBeamPhase] = useState<'idle' | 'active' | 'fading'>('idle');
-  /* Does the composer card hold focus? Drives the docked bar's unfold (below).
-     Its own state rather than a read of `beamPhase`: that one is an ANIMATION
-     lifecycle (active -> fading -> idle) and lingers through the fade-out, so
-     the bar would stay open for half a second after the caret left. */
-  const [composerFocused, setComposerFocused] = useState(false);
-  /* Docked only: the HOST folded the bar back down. Two things raise it —
-     scrolling the page (per product: 滑动这个页面就会收起来，点击后展开) and the
-     community view switching tabs (`collapseSignal` below). Its own flag rather
-     than blurring the editor — a blur would take the caret with it, so anyone
-     who scrolls mid-thought would have to click back in to keep typing. Cleared
-     by a focus on the card, or by a pointer landing anywhere on the bar (see
-     the composer card's `onPointerDownCapture`): the caret is often still in
-     the field when the user clicks back, and then no focus event fires. */
-  const [forcedCollapsed, setForcedCollapsed] = useState(false);
   const beamRef = useRef<HTMLDivElement | null>(null);
   const [libraryPickerOpen, setLibraryPickerOpen] = useState(false);
   const [projectReferenceOpen, setProjectReferenceOpen] = useState(false);
@@ -530,13 +480,10 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
   // reference only changes on a real switch, which restarts the carousel.
   const carouselScenarios = useMemo<PlaceholderScenario[]>(() => buildPlaceholderScenarios({
     activeChipId,
-    // The scene narrows the parent's lines; it is not a template of its own, so
-    // prompt-example and label fallbacks still key off the parent task type.
-    activePrototypeSubtypeId: activeChipId === 'prototype' ? activePrototypeSubtypeId ?? null : null,
     resolveTextKey: (key) => t(key),
     examplesForChip: (chipId) => homeHeroChipPromptExamples(chipId, locale),
     fallbackForChip: (chipId) => fallbackPlaceholderScenarioText(chipId, locale, t),
-  }), [activeChipId, activePrototypeSubtypeId, locale, t]);
+  }), [activeChipId, locale, t]);
   // The placeholder carousel runs while the composer is empty and nothing
   // OTHER than a create-template chip is bound. A selected template keeps it
   // alive (showing that template's scenarios); only an explicit plugin/skill
@@ -568,38 +515,6 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
       node.removeEventListener('focusout', onOut);
     };
   }, []);
-
-  useEffect(() => {
-    if (!isDock) return undefined;
-    const onScroll = () => setForcedCollapsed(true);
-    // Bind the SCROLLING ELEMENT itself. The entry page scrolls inside
-    // `.entry-main--scroll`, not the window, and an element's scroll event does
-    // not bubble — `window` never hears it. A capture-phase listener on
-    // `document` does not either: measured on this page, it took 0 hits while
-    // the pane's scrollTop moved. `.entry-main--scroll` is the same handle
-    // HomeView and InlineModelSwitcher already reach for; window stays bound
-    // for any host where the page itself is the scroller.
-    const pane =
-      homeHeroRef.current?.closest('.entry-main--scroll')
-      ?? document.querySelector('.entry-main--scroll');
-    pane?.addEventListener('scroll', onScroll, { passive: true });
-    window.addEventListener('scroll', onScroll, { passive: true });
-    return () => {
-      pane?.removeEventListener('scroll', onScroll);
-      window.removeEventListener('scroll', onScroll);
-    };
-  }, [isDock]);
-
-  /* The host's other fold: the community view raises `collapseSignal` on every
-     tab change, and the bar returns to its collapsed default (per product: tab
-     之间的切换的时候这个输入框默认是收起来的). Folding rather than clearing —
-     whatever the user has already put in the field survives in the one-line
-     pill, exactly as it does after a scroll. Runs on mount too: the bar's
-     resting state IS collapsed, so the first pass changes nothing. */
-  useEffect(() => {
-    if (!isDock) return;
-    setForcedCollapsed(true);
-  }, [collapseSignal, isDock]);
 
   const carouselActive =
     active &&
@@ -857,7 +772,7 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
     [filteredExamplePlugins],
   );
 
-  // First-run guide, beat 1: pulse the Prototype chip for brand-new users only
+  // First-run guide, beat 1: pulse the deck chip for brand-new users only
   // when Home could not bind a default type. A successfully seeded default has
   // already completed that choice, so skip the redundant pulse and let beat 2
   // guide the user to its first example card.
@@ -870,7 +785,7 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
       setGuidePulseChipId(null);
       return;
     }
-    const arm = window.setTimeout(() => setGuidePulseChipId('prototype'), 900);
+    const arm = window.setTimeout(() => setGuidePulseChipId('deck'), 900);
     const disarm = window.setTimeout(() => setGuidePulseChipId(null), 3600);
     return () => {
       window.clearTimeout(arm);
@@ -1312,7 +1227,7 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
       page_name: 'home',
       area: 'chat_composer',
       element: 'example_prompt',
-      chip_id: activeChipId ?? 'prototype',
+      chip_id: activeChipId ?? 'deck',
     });
     setSelectedPromptExample({
       label: promptExampleChipLabel(example),
@@ -1320,8 +1235,8 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
     });
     onExamplePromptStatusChange?.({
       title: promptExampleChipLabel(example),
-      artifactType: activeChipId ?? 'prototype',
-      brief: briefForChipId(activeChipId ?? 'prototype'),
+      artifactType: activeChipId ?? 'deck',
+      brief: briefForChipId(activeChipId ?? 'deck'),
     });
     onPromptChange(example);
     editorRef.current?.setText(example);
@@ -1512,10 +1427,10 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
           lead: titleTemplate.slice(0, titleSlotIndex),
           tail: titleTemplate.slice(titleSlotIndex + TITLE_WORD_SLOT.length),
         };
-  const titleRotatingWords = t('homeHero.titleWords')
-    .split(TITLE_WORD_SEPARATOR)
-    .map((word) => word.trim())
-    .filter(Boolean);
+  const titleRotatingWords = [
+    homeHeroChipLabel('deck', t),
+    homeHeroChipLabel('image', t),
+  ];
   /* Once a type is picked below, the headline stops rotating and names it (per
      product) — the sentence and the selected pill must agree. Same label source
      as the pill itself (`homeHeroChipLabel`), so the two can never drift. */
@@ -1530,26 +1445,8 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
   return (
     <section
       ref={homeHeroRef}
-      className={`home-hero${isDock ? ' home-hero--dock' : ''}`}
+      className="home-hero"
       data-testid="home-hero"
-      data-variant={variant}
-      /* Docked only: an untouched, unfocused composer shows its input line and
-         the send button and nothing else. It unfolds on EITHER trigger —
-         something to send, or the caret arriving.
-         `carouselActive` answers the first already: it is what decides whether
-         the rotating scenario may play, i.e. whether the field holds anything
-         the USER put there (typed text, a staged file, an explicit
-         plugin/skill, an open @mention).
-         Focus is the second (per product 2026-08-26, reversing the earlier
-         "开始输入 only" rule — parking the caret now does open the bar).
-         Scrolling the page folds it again (per product 2026-08-27) — and that
-         branch is UNCONDITIONAL: it folds whatever is in the field, typed text
-         included, because the ask is that scrolling always puts the bar back
-         down. Only the first branch still asks `carouselActive`; it is what
-         keeps a field with content open once the caret leaves it. */
-      data-collapsed={
-        isDock && ((carouselActive && !composerFocused) || forcedCollapsed) ? 'true' : undefined
-      }
     >
       {/* Hero header: one plain question. The animated pixel-scan wordmark that
           used to stand here is gone (per product) — the headline carries the
@@ -1562,8 +1459,7 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
           lands the ink on the card's own centre line. Keyed off the string, not
           the locale: any translation that ends in ？！。 gets it, and Latin
           headlines (a narrow "?") are left alone. */}
-      {isDock ? null : (
-        <>
+      <>
           <h1
             className={
               'home-hero__title' +
@@ -1590,62 +1486,13 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
           </h1>
           {/* One quiet line under the headline (per product). */}
           <p className="home-hero__subtitle">{t('homeHero.subtitle')}</p>
-        </>
-      )}
+      </>
 
       {/* #5517 wraps the input card + workdir row into one visible composer
           card so they read as a single surface. */}
       <div
         className="home-hero__composer-card"
         data-testid="home-hero-composer-card"
-        /* Docked: a pointer anywhere on the bar opens it (per product: 我的鼠标
-           只要点击这个模块包含输入框就展开). `onFocus` below cannot carry this on
-           its own — a scroll folds the bar WITHOUT blurring the editor (that is
-           deliberate: the caret has to survive a scroll), so the caret is
-           usually STILL in the field when the user clicks back, no focus event
-           fires, and the bar had no way to reopen. Capture phase, because the
-           editor handles its own pointerdown.
-           Anything focusable in the bar keeps its own click — only the inert
-           parts hand the caret to the field, which is also what makes the
-           reopen stick: `carouselActive && !composerFocused` would fold it
-           straight back if nothing took focus. */
-        onPointerDownCapture={
-          isDock
-            ? (event) => {
-                setForcedCollapsed(false);
-                const target = event.target;
-                if (
-                  target instanceof Element &&
-                  target.closest(
-                    'button, a, input, textarea, select, [role="button"], [contenteditable="true"]',
-                  )
-                ) {
-                  return;
-                }
-                editorRef.current?.focus();
-              }
-            : undefined
-        }
-        /* Focus anywhere in the BAR holds it open — not just in the input card
-           (per product: 没有输入时点工作目录，面板没弹出，直接收起来了). The
-           工作目录 trigger, the execution switcher and the pickers' panels are
-           SIBLINGS of the input card, so tracking focus on that card alone read
-           a click on any of them as a blur: on an empty field `carouselActive`
-           is still true, the bar folded, `display: none` took the row away
-           mid-click, and the panel never got to open.
-           focusin/focusout bubble, so this outer box hears every one of them,
-           and `contains()` stops a move BETWEEN the bar's own controls from
-           counting as leaving. The beam stays on the input card's own handlers
-           below — it traces THAT box, not this one. */
-        onFocus={() => {
-          setComposerFocused(true);
-          setForcedCollapsed(false);
-        }}
-        onBlur={(event) => {
-          const next = event.relatedTarget;
-          if (next instanceof Node && event.currentTarget.contains(next)) return;
-          setComposerFocused(false);
-        }}
       >
       <div
         className={`home-hero__input-card${
@@ -2472,11 +2319,7 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
         {onPickWorkingDir ? (
           <WorkingDirPicker
             className="home-hero__working-dir-picker"
-            /* Docked at the foot of the community view, a downward panel opens
-               straight off the bottom of the window — so this one hangs UP and
-               over the composer instead. Home's copy of the same picker sits
-               mid-column with room below it and keeps opening down. */
-            placement={isDock ? 'up' : 'down'}
+            placement="down"
             emptyLabel={t('homeWorkingDir.triggerShort')}
             workingDir={workingDir}
             recentDirs={recentDirs}
@@ -2579,9 +2422,9 @@ export const HomeHero = forwardRef<HomeHeroHandle, Props>(function HomeHero(
           question the pill had just answered. The examples below now show the
           picked type's full set. */}
 
-      {isDock ? null : recommendationSlot}
+      {recommendationSlot}
 
-      {isDock ? null : examplePluginPresets.length > 0 && activeChipId ? (
+      {examplePluginPresets.length > 0 && activeChipId ? (
         <PluginPromptPresets
           chipId={activeChipId}
           plugins={examplePluginPresets}
@@ -4120,19 +3963,8 @@ function ShortcutsMenu({
 // Scenario subtitle shown under the title on the illustrated card rail.
 function homeHeroChipDescription(chipId: string, t: ReturnType<typeof useT>): string {
   switch (chipId) {
-    case 'prototype': return t('homeHero.chip.prototypeDesc');
-    case 'web-clone': return t('homeHero.chip.webCloneDesc');
-    case 'wireframe': return t('homeHero.chip.wireframeDesc');
-    case 'mobile': return t('homeHero.chip.mobileDesc');
     case 'deck': return t('homeHero.chip.deckDesc');
-    case 'document': return t('homeHero.chip.documentDesc');
     case 'image': return t('homeHero.chip.imageDesc');
-    case 'video': return t('homeHero.chip.videoDesc');
-    case 'audio': return t('homeHero.chip.audioDesc');
-    case 'hyperframes': return t('homeHero.chip.hyperframesDesc');
-    case 'webgl': return t('homeHero.chip.webglDesc');
-    case 'live-artifact': return t('homeHero.chip.liveArtifactDesc');
-    case 'create-brand-kit': return t('homeHero.chip.createBrandKitDesc');
     default: return '';
   }
 }
@@ -4161,18 +3993,8 @@ function fallbackPlaceholderScenarioText(
 // consumed once picked (e.g. "Open a chat that builds a clickable prototype").
 function homeHeroChipTitle(chip: HomeHeroChip, t: ReturnType<typeof useT>): string {
   switch (chip.id) {
-    case 'prototype': return t('homeHero.chip.prototypeNext');
-    case 'web-clone': return t('homeHero.chip.webCloneNext');
-    case 'wireframe': return t('homeHero.chip.wireframeNext');
-    case 'mobile': return t('homeHero.chip.mobileNext');
     case 'deck': return t('homeHero.chip.deckNext');
-    case 'document': return t('homeHero.chip.documentNext');
     case 'image': return t('homeHero.chip.imageNext');
-    case 'video': return t('homeHero.chip.videoNext');
-    case 'audio': return t('homeHero.chip.audioNext');
-    case 'live-artifact': return t('homeHero.chip.liveArtifactHint');
-    case 'hyperframes': return t('homeHero.chip.hyperframesHint');
-    case 'create-brand-kit': return t('homeHero.chip.createBrandKitHint');
     case 'create-plugin': return t('homeHero.chip.createPluginHint');
     case 'figma': return t('homeHero.chip.figmaHint');
     case 'template': return t('homeHero.chip.templateHint');
@@ -4180,21 +4002,10 @@ function homeHeroChipTitle(chip: HomeHeroChip, t: ReturnType<typeof useT>): stri
   }
 }
 
-// Generic catch-all scenario routers are not real "example" templates: they
-// ship no concrete seed for the gallery and only exist as the silent default
-// binding a media surface carries (see scenario-defaults.ts). Keep them out of
-// the example-prompt presets so e.g. the "Media generation (default scenario)"
-// card never appears under the audio/image/video chips — and, because the
-// example card's selected state is keyed on the active plugin id, never shows
-// up pre-selected when a media mode is entered.
-//
-// `example-web-clone` is the Website clone chip's own base scenario, not a
-// concrete example. The per-site examples are plain text prompt cards (from
-// HOME_PROMPT_EXAMPLES) rather than plugins, so hide the base plugin to keep the
-// preset rail empty for web-clone and let those text cards show instead.
+// The generic media router is an implementation fallback, not a showcase
+// preset. Hide it so the example rail contains actual reusable starting points.
 const EXAMPLE_PRESET_HIDDEN_PLUGIN_IDS = new Set<string>([
   'od-media-generation',
-  'example-web-clone',
 ]);
 
 // Keep the five Home recommendations in the selected editorial order;
@@ -4206,13 +4017,6 @@ const HOME_PRESET_PLUGIN_IDS_BY_CHIP: Partial<Record<string, readonly string[]>>
     'example-html-ppt-zhangzara-block-frame',
     'example-fs-notebook-tabs',
     'example-guizang-ppt',
-  ],
-  document: [
-    'example-pm-spec',
-    'example-finance-report',
-    'example-clinical-case-report',
-    'example-resume-modern',
-    'example-invoice',
   ],
   image: [
     'image-template-vr-headset-exploded-view-poster',
@@ -4267,12 +4071,9 @@ function comparePluginPresetOrder(
       return aIndex - bIndex;
     }
   }
-  // Gallery order (OPEND-449): pins first, default seeds + no-preview tiles sunk
-  // to the bottom, then usage popularity for non-prototype chips. The prototype
-  // chip stays curation-governed, so popularity is skipped and it keeps its
-  // curated order.
-  const curationGoverned = chipId === 'prototype';
-  const gallery = comparePluginGalleryOrder(a.id, b.id, curationGoverned, curationGoverned);
+  // Gallery order: pins first, default seeds + no-preview tiles sunk to the
+  // bottom, then usage popularity.
+  const gallery = comparePluginGalleryOrder(a.id, b.id, false, false);
   if (gallery !== 0) return gallery;
   const aCurated = curatedPluginPriorityForChip(a, chipId);
   const bCurated = curatedPluginPriorityForChip(b, chipId);
@@ -4310,65 +4111,10 @@ export function pluginMatchesExampleChip(record: InstalledPluginRecord, chipId: 
     );
   };
   switch (chipId) {
-    case 'prototype':
-      return has('prototype') || hasPart('web-prototype');
-    case 'web-clone':
-      // Website reproduction flows (e.g. example-web-clone / site-clone kits).
-      return has('web-clone', 'website-clone', 'site-clone') || hasPart('web-clone', 'website-clone');
-    case 'wireframe':
-      // Lo-fi / sketch / whiteboard explorations (e.g. wireframe-sketch).
-      return (
-        hasPart('wireframe') ||
-        has('low-fidelity', 'lo-fi-mockup', 'sketch-wireframe', 'whiteboard-sketch', 'hand-drawn')
-      );
-    case 'mobile':
-      // Native mobile app prototypes: iOS / Android phone screens.
-      return (
-        (hasPart('mobile') ||
-          has('ios-app', 'android-app', 'phone-screen', 'app-mockup', 'app-ui')) &&
-        !hasPart('video', 'audio', 'image', 'hyperframes')
-      );
-    case 'document':
-      // Documents: resumes, reports, invoices, papers, briefs, PDFs.
-      return (
-        (has('resume', 'cv', 'invoice', 'document', 'docs', 'report', 'paper') ||
-          hasPart(
-            'resume',
-            'documentation',
-            'invoice',
-            'report',
-            'whitepaper',
-            'academic-paper',
-            'case-report',
-            'meeting-notes',
-            'runbook',
-            'eguide',
-            'letter',
-            'dossier',
-            'memo',
-          )) &&
-        !hasPart('video', 'audio', 'hyperframes', 'deck', 'slides')
-      );
     case 'deck':
       return has('deck', 'slides', 'slide-deck') || hasPart('slide', 'deck');
-    case 'hyperframes':
-      return hasPart('hyperframes', 'hyperframe');
-    case 'live-artifact':
-      return has('live-artifact') || hasPart('live-artifact');
-    case 'webgl':
-      return (
-        has('webgl', 'webgl2', 'shader', 'gpu') ||
-        hasPart('webgl', 'shader', 'gpu')
-      );
     case 'image':
-      return (has('image') || hasPart('image-template')) && !hasPart('video', 'audio', 'live-artifact');
-    case 'video':
-      return (has('video') || hasPart('video-template')) && !hasPart('hyperframes', 'audio');
-    case 'audio':
-      // Exclude video / HyperFrames templates that merely carry an
-      // `audio-reactive` tag (substring-matched by hasPart('audio')): their
-      // home is the Video / HyperFrames chips, not the audio gallery.
-      return (has('audio') || hasPart('audio')) && !hasPart('video', 'hyperframes');
+      return (has('image') || hasPart('image-template')) && !hasPart('video', 'audio');
     default:
       return false;
   }
@@ -4551,33 +4297,21 @@ function englishSentenceEnd(value: string): string {
 function pluginPresetArtifactLabel(chipId: string, kind: PromptLocaleKind): string {
   if (kind === 'zh') {
     switch (chipId) {
-      case 'prototype': return '一个交互原型';
       case 'deck': return '一套 PPT slide';
       case 'image': return '一张图片';
-      case 'video': return '一段视频';
-      case 'hyperframes': return '一段 HyperFrames 动效视频';
-      case 'audio': return '一段音频';
       default: return '一个设计产物';
     }
   }
   if (kind === 'ja') {
     switch (chipId) {
-      case 'prototype': return 'インタラクティブなプロトタイプ';
       case 'deck': return 'PPT スライド';
       case 'image': return '画像';
-      case 'video': return '動画';
-      case 'hyperframes': return 'HyperFrames のモーション動画';
-      case 'audio': return 'オーディオ';
       default: return 'デザイン成果物';
     }
   }
   switch (chipId) {
-    case 'prototype': return 'interactive prototype';
     case 'deck': return 'PPT slide deck';
     case 'image': return 'image';
-    case 'video': return 'video';
-    case 'hyperframes': return 'HyperFrames motion video';
-    case 'audio': return 'audio clip';
     default: return 'design artifact';
   }
 }
@@ -5354,12 +5088,8 @@ const HOME_PROMPT_EXAMPLES: Record<Locale, Record<string, string[]>> = {
 };
 
 export const HOME_PROMPT_EXAMPLE_CHIP_IDS = [
-  'prototype',
   'deck',
   'image',
-  'video',
-  'hyperframes',
-  'audio',
 ] as const;
 
 // Every supported locale must resolve its own localized example prompts; a
@@ -5376,26 +5106,10 @@ function homeHeroChipPromptExamples(chipId: string, locale: Locale): string[] {
 
 function briefForChipId(chipId: string): Record<string, string> {
   switch (chipId) {
-    case 'prototype':
-      return { artifact_type: 'web prototype', audience: 'product evaluators', fidelity: 'high-fidelity' };
-    case 'web-clone':
-      return { artifact_type: 'website clone', source: 'target URL', fidelity: 'source-first visual reproduction' };
-    case 'wireframe':
-      return { artifact_type: 'lo-fi wireframe', audience: 'product team', fidelity: 'wireframe' };
-    case 'mobile':
-      return { artifact_type: 'mobile app prototype', audience: 'product evaluators', platform: 'iOS & Android' };
-    case 'document':
-      return { artifact_type: 'document (resume / report / PDF)', audience: 'readers' };
     case 'deck':
       return { artifact_type: 'pitch deck / presentation', audience: 'decision makers', slide_count: '10-15 pages' };
     case 'image':
       return { artifact_type: 'image', style: 'cinematic, high-quality, on-brand' };
-    case 'video':
-      return { artifact_type: 'video', style: 'cinematic, high-quality, on-brand' };
-    case 'hyperframes':
-      return { artifact_type: 'motion graphic / animated sequence', style: 'cinematic, polished transitions' };
-    case 'audio':
-      return { artifact_type: 'audio', style: 'professional, polished, brand-appropriate' };
     default:
       return { artifact_type: chipId };
   }

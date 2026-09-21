@@ -2,18 +2,9 @@
 //
 // Entry → template-detail-modal mapping (飞书 recvqxDuYM6Uxk).
 //
-// Two template detail surfaces exist:
-//   • the FULL plugin details modal (PluginDetailsModal → PreviewModal):
-//     top-right Use split action + Share menu + close;
-//   • the LIGHTWEIGHT template preview (TemplatePreviewModal): header
-//     title/category + close; no footer (the Remix bar is gone per product,
-//     OPEND-2692).
-//
-// Product mapping: the Community gallery card opens the FULL modal, and the
-// creation page's active template chip opens the LIGHTWEIGHT preview. This
-// suite locks that mapping plus the two adjacent interactions that must NOT
-// regress while swapping: the example prompt card keeps filling the composer
-// directly (no hover Use/Remix buttons, no modal).
+// The creation page's active template chip opens the lightweight preview.
+// This suite locks that interaction plus the adjacent interactions that must
+// not regress while simplifying the entry surfaces.
 
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -22,7 +13,6 @@ vi.mock('../../src/components/home-hero/PlaceholderCarousel', () => ({
   PlaceholderCarousel: () => null,
 }));
 
-import { CommunityView } from '../../src/components/CommunityView';
 import { HomeView } from '../../src/components/HomeView';
 import { HomeHero } from '../../src/components/HomeHero';
 import { createPluginUseHandoff } from '../../src/components/home-hero/plugin-authoring';
@@ -131,35 +121,6 @@ afterEach(() => {
   vi.restoreAllMocks();
   window.localStorage.clear();
   window.sessionStorage.clear();
-});
-
-describe('Community template card → full details modal', () => {
-  it('opens the full plugin details modal (Use split action + Share + close), not the lightweight preview', async () => {
-    render(<CommunityView />);
-    // The gallery opens on Prototype (the Home type row's lead); this fixture
-    // catalogue is deck-only, so drive the Slides tab before reading the grid.
-    await waitFor(() => {
-      expect(screen.getByRole('button', { name: 'Slides' })).toBeTruthy();
-    });
-    fireEvent.click(screen.getByRole('button', { name: 'Slides' }));
-    await waitFor(() => {
-      expect(document.querySelector('.community-template-card')).not.toBeNull();
-    });
-
-    fireEvent.click(document.querySelector('.community-template-card')!);
-
-    // Full modal chrome: the Use split action (main face + caret), the
-    // template Share menu trigger, and the shared ds-modal backdrop.
-    await waitFor(() => {
-      expect(screen.queryByTestId('plugin-details-use-example-fundraising-deck')).not.toBeNull();
-    });
-    expect(screen.getByTestId('plugin-details-use-example-fundraising-deck-menu')).toBeTruthy();
-    expect(document.querySelector('.template-share-trigger')).not.toBeNull();
-    expect(document.querySelector('.ds-modal-backdrop')).not.toBeNull();
-
-    // The lightweight footer-Remix preview must NOT be what this card opens.
-    expect(document.querySelector('.community-template-preview')).toBeNull();
-  });
 });
 
 describe('creation page active template chip → lightweight preview', () => {

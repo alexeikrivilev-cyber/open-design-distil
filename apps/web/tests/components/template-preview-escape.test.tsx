@@ -4,8 +4,8 @@ import { afterEach, expect, it, vi } from 'vitest';
 import { TemplatePreviewModal, type TemplateDemo } from '../../src/components/CommunityTemplatePreview';
 
 const template: TemplateDemo = {
-  id: 'preview', title: 'Preview', tags: [], accent: '#4164f4', meta: 'Prototype',
-  author: 'Open Design', type: 'Prototype', subtype: '', cardMedia: null,
+  id: 'preview', title: 'Preview', tags: [], accent: '#4164f4', meta: 'Slides',
+  author: 'Open Design', type: 'Slides', subtype: '', cardMedia: null,
   posterSrc: null, previewSrc: null, previewVideo: null, prompt: '',
 };
 

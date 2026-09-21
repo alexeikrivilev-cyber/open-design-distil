@@ -21,8 +21,6 @@ vi.mock('../../src/components/home-hero/PlaceholderCarousel', () => ({
 import { HomeHero, homeHeroExamplePluginsForChip } from '../../src/components/HomeHero';
 import {
   HOME_HERO_CHIPS,
-  HOME_TYPE_ROW_IDS,
-  HOME_TYPE_ROW_MORE_IDS,
   findChip,
   orderedCreateChips,
 } from '../../src/components/home-hero/chips';
@@ -125,7 +123,7 @@ describe('HomeHero intent rail', () => {
     // 2026-08-31). Everything else — Brand Kit's own action, the migrate
     // shortcuts, and the create scenarios that left the row — is reached from
     // the Brand Kit tab, the Extensions tab, and the composer + menu.
-    const reachable = new Set([...HOME_TYPE_ROW_IDS, ...HOME_TYPE_ROW_MORE_IDS]);
+    const reachable = new Set(orderedCreateChips().map((chip) => chip.id));
     for (const chip of HOME_HERO_CHIPS) {
       const wedge = typePill(chip.id);
       if (reachable.has(chip.id)) {
@@ -171,32 +169,31 @@ describe('HomeHero intent rail', () => {
   });
 
   it('moves the active creation chip into the composer and hides the tab row', () => {
-    renderHero({ activeChipId: 'video' });
+    renderHero({ activeChipId: 'deck' });
     expect(screen.queryByTestId('home-hero-type-tabs')).toBeNull();
-    expect(screen.queryByTestId('home-hero-rail-video')).toBeNull();
+    expect(screen.queryByTestId('home-hero-rail-deck')).toBeNull();
     const node = screen.getByTestId('home-hero-template-trigger');
-    expect(node.textContent).toContain('Creation type');
+    expect(node.textContent).toContain('Slide deck');
   });
 
   it('does not reserve an empty active-context row for a hidden chip-bound plugin', () => {
     renderHero({
-      activeChipId: 'prototype',
-      activePrototypeSubtypeId: 'wireframe',
+      activeChipId: 'deck',
       activePluginTitle: 'Wireframe',
       showActivePluginChip: false,
       contextItemCount: 3,
     });
 
     expect(document.querySelector('.home-hero__active')).toBeNull();
-    expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Creation type');
+    expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Slide deck');
   });
 
   it('switches the creation type without a clear control', () => {
     const onClearActiveChip = vi.fn();
-    const { onPickChip } = renderHero({ activeChipId: 'prototype', onClearActiveChip });
+    const { onPickChip } = renderHero({ activeChipId: 'deck', onClearActiveChip });
     expect(screen.queryByTestId('home-hero-template-clear')).toBeNull();
-    pickTemplate('deck');
-    expect(onPickChip).toHaveBeenCalledWith(findChip('deck'));
+    pickTemplate('image');
+    expect(onPickChip).toHaveBeenCalledWith(findChip('image'));
     expect(onClearActiveChip).not.toHaveBeenCalled();
   });
 
@@ -344,27 +341,6 @@ describe('HomeHero intent rail', () => {
     expect(onPickExamplePlugin).not.toHaveBeenCalled();
   });
 
-  it('maps powered WebGL presets to the WebGL chip without exposing a Worker chip', () => {
-    const webgl = makePlugin('example-webgl-experience', 'prototype', 'WebGL Experience', [
-      'webgl',
-      'webgl2',
-      'shader',
-      'gpu',
-      'powered-preview',
-    ]);
-    const worker = makePlugin('example-worker-visualizer', 'prototype', 'Worker Visualizer', [
-      'web-worker',
-      'worker',
-      'sharedarraybuffer',
-      'offscreencanvas',
-      'powered-preview',
-    ]);
-    const unrelated = makePlugin('example-web-prototype', 'prototype', 'Prototype');
-
-    expect(homeHeroExamplePluginsForChip('webgl', [webgl, unrelated, worker], 'en')).toEqual([webgl]);
-    expect(findChip('worker')).toBeUndefined();
-  });
-
   it('orders curated example presets first for the selected artifact type', () => {
     const ordinaryDeck = makePlugin('example-ordinary-deck', 'deck', 'Ordinary deck');
     const capsule = makePlugin(
@@ -432,72 +408,6 @@ describe('HomeHero intent rail', () => {
     ]);
   });
 
-  it('moves live artifact presets out of Image and into Live artifact examples', () => {
-    const imagePoster = makePlugin('image-template-poster', 'image', 'Image Poster');
-    const liveDashboard = makePlugin(
-      'example-live-dashboard',
-      'prototype',
-      'Live Dashboard',
-      ['live-dashboard'],
-    );
-    const notionDashboard = makePlugin(
-      'image-template-notion-team-dashboard-live-artifact',
-      'image',
-      'Notion-style Team Dashboard (Live Artifact)',
-      ['live-artifact'],
-    );
-    const socialTracker = makePlugin(
-      'example-social-media-matrix-tracker-template',
-      'template',
-      'Social Media Matrix Tracker Template',
-      ['live-artifacts'],
-    );
-    const tradingDashboard = makePlugin(
-      'example-trading-analysis-dashboard-template',
-      'template',
-      'Trading Analysis Dashboard Template',
-      ['live-artifacts'],
-    );
-    const liveArtifact = makePlugin(
-      'example-live-artifact',
-      'prototype',
-      'Live Artifact',
-      ['live-artifact'],
-    );
-    renderHero({
-      activeChipId: 'image',
-      pluginOptions: [imagePoster, liveDashboard, notionDashboard],
-    });
-
-    let presets = screen.getAllByTestId('home-hero-plugin-preset');
-    expect(presets).toHaveLength(1);
-    expect(presets[0]?.textContent).toContain('Image Poster');
-
-    cleanup();
-    renderHero({
-      activeChipId: 'live-artifact',
-      pluginOptions: [
-        imagePoster,
-        liveArtifact,
-        tradingDashboard,
-        notionDashboard,
-        socialTracker,
-        liveDashboard,
-      ],
-    });
-
-    presets = screen.getAllByTestId('home-hero-plugin-preset');
-    // Order within a facet is now usage/sink-driven (OPEND-449); this test is
-    // about which presets route into Live Artifact, so assert membership only.
-    expect(presets.map((preset) => preset.getAttribute('data-plugin-id')).sort()).toEqual([
-      'example-live-artifact',
-      'example-live-dashboard',
-      'example-social-media-matrix-tracker-template',
-      'example-trading-analysis-dashboard-template',
-      'image-template-notion-team-dashboard-live-artifact',
-    ]);
-  });
-
   it('disables every template while a plugin apply is in flight', () => {
     const { onPickChip } = renderHero({
       pendingPluginId: 'od-figma-migration',
@@ -523,73 +433,22 @@ describe('HomeHero intent rail', () => {
     expect(findChip('template')?.action).toMatchObject({ kind: 'open-template-picker' });
   });
 
-  it('leads the create group with the Brand Kit chip and its own action discriminator', () => {
-    const createChips = HOME_HERO_CHIPS.filter((chip) => chip.group === 'create');
-    expect(createChips[0]?.id).toBe('create-brand-kit');
-    expect(findChip('create-brand-kit')?.action).toMatchObject({ kind: 'create-brand-kit' });
-    expect(findChip('create-brand-kit')?.icon).toBe('swatchbook');
-  });
-
-  it('media chips route to od-media-generation with the matching project kind', () => {
+  it('keeps image creation on the media generation scenario', () => {
     expect(findChip('image')?.action).toMatchObject({
       kind: 'apply-scenario',
       pluginId: 'od-media-generation',
       projectKind: 'image',
     });
-    expect(findChip('video')?.action).toMatchObject({ pluginId: 'od-media-generation', projectKind: 'video' });
-    expect(findChip('audio')?.action).toMatchObject({ pluginId: 'od-media-generation', projectKind: 'audio' });
   });
 
-  it('marks prototype and slide-deck as daemon-owned automatic scenarios', () => {
-    // Prototype now binds to web-prototype's seed template instead of
-    // the generic od-new-generation router. Same for Slide deck →
-    // simple-deck. See packages/contracts/src/plugins/scenario-defaults.ts
-    // for the rationale (battle-tested seed + layouts + checklist).
-    expect(findChip('prototype')?.action).toMatchObject({
-      pluginId: 'example-web-prototype',
-      projectKind: 'prototype',
-      automaticDefault: true,
-    });
+  it('marks the presentation scenarios as daemon-owned defaults', () => {
     expect(findChip('deck')?.action).toMatchObject({
       pluginId: 'example-simple-deck',
       projectKind: 'deck',
       automaticDefault: true,
     });
-  });
-
-  it('specialised category chips route to their bundled scenario plugin', () => {
-    // HyperFrames is the motion-graphics specialisation of Video,
-    // surfaced as a separate chip so users can target it directly
-    // instead of routing through the generic Video chip.
-    expect(findChip('hyperframes')?.action).toMatchObject({
-      kind: 'apply-scenario',
-      pluginId: 'example-hyperframes',
-      projectKind: 'video',
-      automaticDefault: true,
-      projectMetadata: expect.objectContaining({ intent: 'hyperframes' }),
-    });
-    expect(findChip('live-artifact')?.action).toMatchObject({
-      kind: 'apply-scenario',
-      pluginId: 'example-live-artifact',
-      projectKind: 'prototype',
-      automaticDefault: true,
-      projectMetadata: {
-        kind: 'prototype',
-        intent: 'live-artifact',
-        fidelity: 'high-fidelity',
-      },
-    });
-  });
-
-  // `automaticDefault` is not the OD Next gate and never was — it says the
-  // chip's plugin is the product's own choice for that surface, so the create
-  // travels without a plugin id and the daemon stamps the automatic scenario
-  // binding. The OD Next route is decided separately, by chip id, and these
-  // surfaces own none.
-  it('keeps ordinary media chips outside automatic OD Next routing', () => {
-    for (const id of ['image', 'video', 'audio', 'live-artifact']) {
-      expect(automaticStrategyTaskProfileForRouteId(id), id).toBeNull();
-      expect(findChip(id)?.action, id).toMatchObject({ automaticDefault: true });
-    }
+    expect(findChip('image')?.action).toMatchObject({ automaticDefault: true });
+    expect(automaticStrategyTaskProfileForRouteId('deck')).toBe('ppt');
+    expect(automaticStrategyTaskProfileForRouteId('image')).toBeNull();
   });
 });

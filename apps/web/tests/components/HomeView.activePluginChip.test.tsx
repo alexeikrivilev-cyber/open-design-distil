@@ -4,8 +4,8 @@
 // own clear ×) or lets a task-type chip stand in. It must key off the persisted
 // `explicitPick` flag — set when the user picks an example-prompt preset or a
 // Community card — NOT off `record.id !== defaultPluginIdForChip(chipId)`. The
-// prototype rail's default plugin is `example-web-prototype` (see
-// home-hero/chips.ts), so a preset pick of that very plugin would be wrongly
+// deck's default plugin is `example-simple-deck` (see home-hero/chips.ts), so
+// a preset pick of that very plugin would be wrongly
 // classified as a task-default binding and never surface its chip under the old
 // id-equality heuristic.
 
@@ -34,7 +34,6 @@ function activeFor(
     lastRenderedPrompt: null,
     projectKind: null,
     chipId,
-    prototypeSubtypeId: null,
     mediaSurface: null,
     projectMetadata: null,
     editableInputNames: [],
@@ -47,10 +46,10 @@ function activeFor(
 
 describe('shouldShowActivePluginChip', () => {
   it('surfaces an explicit example-prompt preset even when its plugin id equals the chip default', () => {
-    // prototype → default plugin example-web-prototype; explicit preset pick.
+    // deck → default plugin example-simple-deck; explicit preset pick.
     expect(
       shouldShowActivePluginChip(
-        activeFor('example-web-prototype', 'prototype', true),
+        activeFor('example-simple-deck', 'deck', true),
       ),
     ).toBe(true);
   });
@@ -61,7 +60,7 @@ describe('shouldShowActivePluginChip', () => {
     // to any other explicit pick, so the plugin chip (and its clear ×) stays.
     expect(
       shouldShowActivePluginChip(
-        activeFor('example-web-prototype', 'prototype', true, true),
+        activeFor('example-simple-deck', 'deck', true, true),
       ),
     ).toBe(true);
   });
@@ -71,7 +70,7 @@ describe('shouldShowActivePluginChip', () => {
     // the task chip stands in, so no separate plugin chip.
     expect(
       shouldShowActivePluginChip(
-        activeFor('example-web-prototype', 'prototype', false),
+        activeFor('example-simple-deck', 'deck', false),
       ),
     ).toBe(false);
   });

@@ -60,7 +60,7 @@ const PAGE_COMPACT = 24;
 // 'activewear', …), not display copy — rendering them raw is what put English
 // category chips and English per-card captions inside an otherwise localized
 // modal. Map each known bucket to a translation key (same shape as
-// CommunityView's TEMPLATE_TYPE_LABEL_KEY) and keep the capitalize helper only
+// the template-preview label map) and keep the capitalize helper only
 // as the fallback for a bucket the catalogue adds before this map catches up.
 // Brand *names* stay untranslated — they are proper nouns.
 const BRAND_CATEGORY_LABEL_KEY: Record<string, keyof Dict> = {

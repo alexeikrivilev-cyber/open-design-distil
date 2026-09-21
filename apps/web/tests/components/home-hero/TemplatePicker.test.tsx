@@ -44,8 +44,8 @@ describe('TemplatePicker', () => {
     fireEvent.click(screen.getByTestId('home-hero-template-trigger').querySelector('button')!);
     expect(screen.getAllByRole('option')).toHaveLength(templates.length);
     expect(screen.getByRole('option', { name: labelFor('deck') }).getAttribute('aria-selected')).toBe('true');
-    fireEvent.click(screen.getByRole('option', { name: labelFor('prototype') }));
-    expect(onPick).toHaveBeenCalledWith(chipById('prototype'));
+    fireEvent.click(screen.getByRole('option', { name: labelFor('image') }));
+    expect(onPick).toHaveBeenCalledWith(chipById('image'));
     expect(screen.queryByRole('listbox')).toBeNull();
 
   });
@@ -75,15 +75,15 @@ describe('TemplatePicker', () => {
 
   it('does not reapply an already selected type', () => {
     const onPick = vi.fn();
-    render(<TemplatePicker templates={templates} activeChipId="prototype" onPick={onPick} labelFor={labelFor} />);
+    render(<TemplatePicker templates={templates} activeChipId="image" onPick={onPick} labelFor={labelFor} />);
     fireEvent.click(screen.getByTestId('home-hero-template-trigger').querySelector('button')!);
-    fireEvent.click(screen.getByRole('option', { name: labelFor('prototype') }));
+    fireEvent.click(screen.getByRole('option', { name: labelFor('image') }));
     expect(onPick).not.toHaveBeenCalled();
     expect(screen.queryByRole('listbox')).toBeNull();
   });
 
   it('dismisses on outside pointer down and restores focus on Escape', () => {
-    render(<TemplatePicker templates={templates} activeChipId="prototype" labelFor={labelFor} />);
+    render(<TemplatePicker templates={templates} activeChipId="image" labelFor={labelFor} />);
     const trigger = screen.getByTestId('home-hero-template-trigger').querySelector('button')!;
     fireEvent.click(trigger);
     fireEvent.pointerDown(document.body);
@@ -95,7 +95,7 @@ describe('TemplatePicker', () => {
   });
 
   it('closes an open menu when loading disables the picker', () => {
-    const props = { templates, activeChipId: 'prototype', labelFor };
+    const props = { templates, activeChipId: 'image', labelFor };
     const { rerender } = render(<TemplatePicker {...props} />);
     fireEvent.click(screen.getByTestId('home-hero-template-trigger').querySelector('button')!);
     expect(screen.getByRole('listbox')).toBeTruthy();
@@ -114,48 +114,38 @@ describe('TemplatePicker', () => {
   });
 });
 
-describe('TemplatePicker — the sub-type row cannot move the pill', () => {
-  // The pill used to retitle itself to the picked sub-category, so browsing the
-  // sub-type row relabelled and resized the composer's own row under the
-  // cursor (per product: 切换二级目录时输入框的绿色按钮不要动). The category is
-  // not part of this component's inputs at all any more — the only thing that
-  // can change the pill is changing the TYPE.
+describe('TemplatePicker — the selected type remains stable', () => {
   it('names the type, never a sub-category', () => {
     const { rerender } = render(
       <TemplatePicker
         templates={templates}
-        activeChipId="prototype"
+        activeChipId="image"
         labelFor={labelFor}
       />,
     );
     const pillText = screen.getByTestId('home-hero-template-trigger').textContent;
-    expect(pillText).toContain(labelFor('prototype'));
+    expect(pillText).toContain(labelFor('image'));
 
-    // Everything a sub-category pick changes in the host (its own selection
-    // state) leaves this component's props untouched, so the pill re-renders
-    // identically.
+    // Re-rendering with the same selection leaves the pill unchanged.
     rerender(
       <TemplatePicker
         templates={templates}
-        activeChipId="prototype"
+        activeChipId="image"
         labelFor={labelFor}
       />,
     );
     expect(screen.getByTestId('home-hero-template-trigger').textContent).toBe(pillText);
   });
 
-  it('offers neither a type clear nor a sub-type clear', () => {
+  it('offers no clear control', () => {
     render(
       <TemplatePicker
         templates={templates}
-        activeChipId="prototype"
+        activeChipId="image"
         labelFor={labelFor}
       />,
     );
 
-    // The progressive "first × drops the category, second drops the type" pair
-    // went away with the retitling that made it legible.
-    expect(screen.queryByTestId('home-hero-template-clear-subtype')).toBeNull();
     fireEvent.mouseOver(screen.getByTestId('home-hero-template-picker'));
     expect(screen.queryByTestId('home-hero-template-clear')).toBeNull();
   });

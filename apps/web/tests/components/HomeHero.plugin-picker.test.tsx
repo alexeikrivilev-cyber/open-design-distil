@@ -727,15 +727,15 @@ describe('HomeHero plugin picker', () => {
 
   it('opens active plugin details from the active plugin chip', () => {
     const onOpenPluginDetails = vi.fn();
-    const active = makePlugin('prototype-plugin', 'Prototype Plugin');
+    const active = makePlugin('deck-plugin', 'Deck Plugin');
     render(
       <HomeHero
-        prompt="Build a prototype"
+        prompt="Build a deck"
         onPromptChange={() => undefined}
         onSubmit={() => undefined}
-        activePluginTitle="Prototype"
+        activePluginTitle="Slide deck"
         activePluginRecord={active}
-        activeChipId="prototype"
+        activeChipId="deck"
         onClearActivePlugin={() => undefined}
         onOpenPluginDetails={onOpenPluginDetails}
         pluginOptions={[]}
@@ -749,12 +749,12 @@ describe('HomeHero plugin picker', () => {
       />,
     );
 
-    fireEvent.click(screen.getByTitle('Plugin: Prototype Plugin'));
+    fireEvent.click(screen.getByTitle('Plugin: Deck Plugin'));
     expect(onOpenPluginDetails).toHaveBeenCalledWith(active);
     const activeChipText = screen.getByTestId('home-hero-active-plugin').textContent;
     // The lead chip cuts the title to eight code points and ellipsises the
     // rest, so the full name never eats the prompt's first line.
-    expect(activeChipText).toContain('Prototyp…');
+    expect(activeChipText).toContain('Slide de…');
     expect(activeChipText).not.toContain('Plugin');
   });
 
@@ -771,7 +771,7 @@ describe('HomeHero plugin picker', () => {
         onSubmit={() => undefined}
         activePluginTitle="Cinematic Portal"
         activePluginRecord={active}
-        activeChipId="prototype"
+        activeChipId="deck"
         activePluginIsExplicit
         onClearActivePlugin={onClearActivePlugin}
         onOpenPluginDetails={() => undefined}
@@ -796,15 +796,15 @@ describe('HomeHero plugin picker', () => {
   it('hides the active plugin chip clear button when it stands in for a task chip default plugin', () => {
     // Plain task-chip pick: the chip shows the task label and the footer
     // ActiveTypeChip owns the clear affordance, so the plugin chip has none.
-    const active = makePlugin('prototype-plugin', 'Prototype Plugin');
+    const active = makePlugin('deck-plugin', 'Deck Plugin');
     render(
       <HomeHero
-        prompt="Build a prototype"
+        prompt="Build a deck"
         onPromptChange={() => undefined}
         onSubmit={() => undefined}
-        activePluginTitle="Prototype"
+        activePluginTitle="Slide deck"
         activePluginRecord={active}
-        activeChipId="prototype"
+        activeChipId="deck"
         activePluginIsExplicit={false}
         onClearActivePlugin={() => undefined}
         onOpenPluginDetails={() => undefined}

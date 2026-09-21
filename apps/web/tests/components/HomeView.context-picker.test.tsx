@@ -120,6 +120,7 @@ const WORKSPACE_DESIGN_SYSTEM: DesignSystemSummary = {
 };
 
 const WEB_PROTOTYPE_PLUGIN = makePlugin('example-web-prototype', 'Web Prototype');
+const DECK_PLUGIN = makePlugin('example-simple-deck', 'Simple Deck');
 const MCP_SERVER: McpServerConfig = {
   id: 'linear',
   label: 'Linear',
@@ -181,7 +182,7 @@ describe('HomeView context picker', () => {
   it('preserves selected local catalog provenance while Workspace identity transitions', async () => {
     const fetchMock = vi.fn<typeof fetch>(async (url) => {
       if (typeof url === 'string' && url === '/api/plugins') {
-        return new Response(JSON.stringify({ plugins: [] }), {
+        return new Response(JSON.stringify({ plugins: [WEB_PROTOTYPE_PLUGIN] }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
@@ -254,7 +255,7 @@ describe('HomeView context picker', () => {
   it('stages pasted files on Home and submits them as first-turn context', async () => {
     const fetchMock = vi.fn<typeof fetch>(async (url) => {
       if (typeof url === 'string' && url === '/api/plugins') {
-        return new Response(JSON.stringify({ plugins: [] }), {
+        return new Response(JSON.stringify({ plugins: [WEB_PROTOTYPE_PLUGIN] }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
@@ -544,7 +545,7 @@ describe('HomeView context picker', () => {
   it('keeps the active type chip when the user picks a skill (#2972)', async () => {
     const fetchMock = vi.fn<typeof fetch>(async (url) => {
       if (typeof url === 'string' && url === '/api/plugins') {
-        return new Response(JSON.stringify({ plugins: [WEB_PROTOTYPE_PLUGIN] }), {
+        return new Response(JSON.stringify({ plugins: [DECK_PLUGIN] }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
@@ -573,9 +574,9 @@ describe('HomeView context picker', () => {
       />,
     );
 
-    await pickHomeTemplate('prototype');
+    await pickHomeTemplate('deck');
     await waitFor(() => {
-      expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Prototype');
+      expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Slide deck');
     });
 
     screen.getByTestId('home-hero-input');
@@ -593,16 +594,16 @@ describe('HomeView context picker', () => {
     // along inside it, so the answer to the conflict is "both survive" — the
     // strategy's own conflict order ranks the user-selected Skill above its
     // task-type Skill in the prompt.
-    expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Prototype');
+    expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Slide deck');
 
     await waitFor(() => expect((screen.getByTestId('home-hero-submit') as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByTestId('home-hero-submit'));
 
     expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       pluginId: null,
-      automaticStrategyTaskProfile: 'prototype',
+      automaticStrategyTaskProfile: 'ppt',
       skillId: DECK_SKILL.id,
-      projectKind: 'prototype',
+      projectKind: 'deck',
     }));
     expect(onSubmit.mock.calls[0]?.[0]?.pluginId).not.toBe('example-web-prototype');
   });
@@ -610,7 +611,7 @@ describe('HomeView context picker', () => {
   it('hands a supported automatic type entirely to OD Next without applying its legacy plugin', async () => {
     const fetchMock = vi.fn<typeof fetch>(async (url) => {
       if (typeof url === 'string' && url === '/api/plugins') {
-        return new Response(JSON.stringify({ plugins: [WEB_PROTOTYPE_PLUGIN] }), {
+        return new Response(JSON.stringify({ plugins: [DECK_PLUGIN] }), {
           status: 200,
           headers: { 'content-type': 'application/json' },
         });
@@ -633,30 +634,30 @@ describe('HomeView context picker', () => {
     render(
       <HomeView
         projects={[]}
-        skills={[SKILL]}
+        skills={[DECK_SKILL]}
         onSubmit={onSubmit}
         onOpenProject={() => undefined}
       />,
     );
 
     await screen.findByTestId('home-hero-input');
-    setHomeHeroPrompt('@proto');
+    setHomeHeroPrompt('@deck');
     await settle();
-    fireEvent.mouseDown(await screen.findByRole('option', { name: /prototype lab/i }));
+    fireEvent.mouseDown(await screen.findByRole('option', { name: /deck lab/i }));
     await waitFor(() => {
       expect(screen.getByTestId('home-hero-active-skill')).toBeTruthy();
     });
 
-    await pickHomeTemplate('prototype');
+    await pickHomeTemplate('deck');
     await waitFor(() => {
-      expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Prototype');
+      expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Slide deck');
       // The mention the user typed is still in their prompt, so the Skill it
       // named stays selected too — picking a task type decides the route, not
       // what material the turn carries.
       expect(screen.getByTestId('home-hero-active-skill')).toBeTruthy();
     });
 
-    setHomeHeroPrompt('Build a pricing-page prototype.');
+    setHomeHeroPrompt('Build an investor deck.');
     await settle();
     await waitFor(() => expect((screen.getByTestId('home-hero-submit') as HTMLButtonElement).disabled).toBe(false));
     fireEvent.click(screen.getByTestId('home-hero-submit'));
@@ -664,9 +665,9 @@ describe('HomeView context picker', () => {
     await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
       pluginId: null,
       pluginSelectionProvenance: 'automatic-default',
-      automaticStrategyTaskProfile: 'prototype',
-      skillId: SKILL.id,
-      projectKind: 'prototype',
+      automaticStrategyTaskProfile: 'ppt',
+      skillId: DECK_SKILL.id,
+      projectKind: 'deck',
       appliedPluginSnapshotId: null,
       pluginTitle: null,
       taskKind: null,

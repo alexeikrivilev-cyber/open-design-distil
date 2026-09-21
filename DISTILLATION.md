@@ -10,7 +10,13 @@ Success is not the maximum number of deleted files. Success is removing unrelate
 
 We are in repository distillation. **Do not implement the new presentation pipeline yet.**
 
-The first reversible surface-reduction batch is complete: the default Home/create rail now exposes `deck` and `image` only. Legacy prototype/document/video/audio/WebGL/live-artifact and plugin/Figma implementations are intentionally still present behind compatibility paths. Treat them as mapped removal candidates, not as active product scope, until their reverse dependencies and persistence coupling are proven.
+The first surface-reduction batches are complete. Home/create now exposes only `deck` and `image`; the public Community gallery, standalone Marketplace page, docked second composer, Prototype sub-type rail, and stale type-pill layer are gone. The New Project modal is also limited to `Slide deck`, `From template`, and `Image`; legacy prototype/live-artifact/video/audio branches remain only as compatibility code until their daemon reverse-dependencies are isolated. Local Plugins/Skills catalog, plugin detail/source management, template picker, Figma migration action, image generation, and the shared project/preview/export infrastructure remain. Legacy project/plugin/media contracts are retained only where they are still shared or needed to read existing data; they are not new Home entry points.
+
+The current working boundary is intentionally small:
+
+`Home -> deck | image -> prompt/examples/assets/design system -> project -> preview/edit/export`
+
+The product surface is distilled; the underlying runtime is not yet aggressively rewritten. That is deliberate: daemon contracts, media abstractions, registry loading, and persistence still require dependency evidence before package-level deletion. The visible boundary is now the source of truth for future cleanup; do not restore hidden modes merely because their compatibility branches still exist.
 
 The next batch must inspect remaining navigation/routes and catalog registries, then remove one unrelated family at a time. Do not turn the temporary compatibility retention into a permanent second product.
 
@@ -248,6 +254,19 @@ Exact commands must be discovered from the repo, but retained foundations should
 8. Existing relevant export works.
 9. Removed features have no dead UI entry points.
 10. Retained routes do not fail because shared dependencies were removed.
+
+### Distilled Home contract
+
+- Home has one composer; there is no docked/secondary composer state.
+- The creation catalog has exactly two product entry points: `deck` and `image`.
+- Empty-composer examples rotate only through deck/image prompts and bind the
+  corresponding scenario before submit.
+- A fresh Home mount is neutral; it does not silently bind a hidden Prototype
+  or other default mode.
+- `/community` and `/marketplace` are compatibility redirects into retained
+  local surfaces, not public feature pages.
+- Plugin details, local plugin/skill discovery, design-system selection,
+  assets, preview, project persistence and export remain in scope.
 
 ## Stop and restore conditions
 

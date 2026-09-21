@@ -123,6 +123,8 @@ const DESIGN_PLATFORMS: Array<{
   },
 ];
 
+// Compatibility union for persisted/deep-linked callers. The visible modal
+// surface is declared by VISIBLE_CREATE_TABS below.
 export type CreateTab = 'prototype' | 'live-artifact' | 'deck' | 'template' | 'media' | 'other';
 export type MediaSurface = 'image' | 'video' | 'audio';
 
@@ -180,6 +182,21 @@ const TAB_LABEL_KEYS: Record<CreateTab, keyof Dict> = {
   media: 'newproj.tabMedia',
   other: 'newproj.tabOther',
 };
+
+// Keep the modal's visible creation surface intentionally small. Prototype,
+// live-artifact, and the old catch-all tabs remain understood by the payload
+// builder for backwards compatibility with saved links, but they are no
+// longer presented as first-class entry points. Image creation stays useful
+// and discoverable alongside decks and saved templates; video/audio remain
+// Home-agent capabilities rather than separate modal workflows.
+const VISIBLE_CREATE_TABS = ['deck', 'template', 'media'] as const satisfies readonly CreateTab[];
+const VISIBLE_MEDIA_SURFACES = ['image'] as const satisfies readonly MediaSurface[];
+
+function normalizeInitialCreateTab(tab: CreateTab): CreateTab {
+  return VISIBLE_CREATE_TABS.includes(tab as (typeof VISIBLE_CREATE_TABS)[number])
+    ? tab
+    : 'deck';
+}
 
 // Maps the New Project tab + media surface to the apply-result target
 // kind enum. `media` collapses to image/video/audio inside callers;
@@ -306,7 +323,7 @@ export function NewProjectPanel({
   const [workingDirError, setWorkingDirError] = useState<
     { message: string; details?: string } | null
   >(null);
-  const [tab, setTab] = useState<CreateTab>(initialTab);
+  const [tab, setTab] = useState<CreateTab>(() => normalizeInitialCreateTab(initialTab));
   // P0 analytics — fire surface_view once per (panel mount, tab) pair so the
   // funnel sees both initial open and tab switches without double-counting on
   // unrelated re-renders. Ref keys on a tab string because the panel is a
@@ -381,16 +398,10 @@ export function NewProjectPanel({
   const [videoPromptTemplate, setVideoPromptTemplate] =
     useState<PromptTemplatePick | null>(null);
 
-  // Design system is meaningful only for the structured/visual surfaces
-  // (prototype, deck, template, and the freeform "other" canvas). The
-  // media surfaces use prompt templates instead — design tokens don't map
-  // onto image/video/audio generations, and the picker just adds noise
-  // there. Keep this list explicit so future tabs declare their intent.
-  const tabSupportsDesignSystem =
-    tab === 'prototype' ||
-    tab === 'deck' ||
-    tab === 'template' ||
-    tab === 'other';
+  // Design systems are meaningful for the retained structured surfaces
+  // (deck and saved template). Image uses prompt/model inputs instead; keep
+  // the list explicit so a future visible tab has to declare its intent.
+  const tabSupportsDesignSystem = tab === 'deck' || tab === 'template';
   // Orbit briefings ship their own complete visual language baked into
   // example.html and explicitly opt out of DESIGN.md injection via
   // `od.design_system.requires: false`. Hide the picker only for those
@@ -409,11 +420,6 @@ export function NewProjectPanel({
         : false;
     }
     const tabSkillId = ((): string | null => {
-      if (tab === 'prototype' || tab === 'live-artifact') {
-        const list = skills.filter((s) => s.mode === 'prototype');
-        return list.find((s) => s.defaultFor.includes('prototype'))?.id
-          ?? list[0]?.id ?? null;
-      }
       if (tab === 'deck') {
         const list = skills.filter((s) => s.mode === 'deck');
         return list.find((s) => s.defaultFor.includes('deck'))?.id
@@ -542,8 +548,7 @@ export function NewProjectPanel({
   // Renderable scenario templates for the active tab's "Start from" rail.
   // Blank (no template) is always the first card; these fill the rest.
   const startTemplates = useMemo(() => {
-    const mode =
-      tab === 'prototype' ? 'prototype' : tab === 'deck' ? 'deck' : null;
+    const mode = tab === 'deck' ? 'deck' : null;
     if (!mode) return [];
     return designTemplates
       .filter((s) => s.mode === mode && !s.aggregatesExamples)
@@ -866,7 +871,7 @@ export function NewProjectPanel({
           <Icon name="chevron-left" size={16} strokeWidth={2} />
         </button>
         <div className="newproj-tabs" role="tablist" ref={tabsRef}>
-          {(Object.keys(TAB_LABEL_KEYS) as CreateTab[]).map((entry) => (
+          {VISIBLE_CREATE_TABS.map((entry) => (
             <button
               key={entry}
               role="tab"
@@ -979,7 +984,7 @@ export function NewProjectPanel({
             role="tablist"
             aria-label={t('newproj.tabMedia')}
           >
-            {(Object.keys(MEDIA_SURFACE_LABEL_KEYS) as MediaSurface[]).map((surface) => (
+            {VISIBLE_MEDIA_SURFACES.map((surface) => (
               <button
                 key={surface}
                 type="button"

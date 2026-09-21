@@ -1,16 +1,5 @@
-// Shared "lightweight" template detail preview + the catalogue→template
-// projection behind it.
-//
-// Extracted from CommunityView so BOTH template-detail entry points resolve
-// the same surfaces (飞书 recvqxDuYM6Uxk):
-//   • the Community gallery card opens the FULL plugin details modal
-//     (PluginDetailsModal), and
-//   • the creation page's active template chip opens THIS lightweight
-//     preview (header title/category + close, footer category + Remix).
-// Keeping the projection (`buildCommunityTemplates`) and the modal together
-// in one module is what lets the Home side render a plugin record through
-// the exact same view-model the Community grid uses — no third modal, no
-// duplicated data shaping.
+// Shared lightweight template preview and the catalogue-to-template
+// projection used by Home's active template chip.
 
 import type {
   InstalledPluginRecord,
@@ -32,7 +21,7 @@ import { examplePresetSeedPrompt } from './plugins-home/presetSeedPrompt';
 import { inferPluginPreview, type MediaPreviewSpec } from './plugins-home/preview';
 import { pluginSubfacetLabel } from './plugins-home/subfacetLabel';
 
-export type TemplateType = 'Prototype' | 'Live Artifact' | 'Slides' | 'Document' | 'Image' | 'Video' | 'HyperFrames' | 'Audio' | 'WebGL';
+export type TemplateType = 'Slides' | 'Image';
 
 export type TemplateDemo = {
   id: string;
@@ -63,21 +52,10 @@ export type TemplateDemo = {
   prompt: string;
 };
 
-/** The tabs the Community gallery always renders inline, mirroring the Home
- *  type row's taxonomy and order (`HOME_TYPE_ROW_IDS` + Image; web-clone stays
- *  a Home-only entry). Fixed rather than derived from the catalogue so the row
- *  reads the same set of artifact kinds as Home even while a kind has no
- *  published templates yet. */
-export const COMMUNITY_TAB_TYPES: readonly TemplateType[] = ['Prototype', 'Slides', 'Document', 'Image'];
-
-/** The kinds behind the row's 更多 popover, in product order (OPEND-3098,
- *  2026-09-16). Fixed like the inline set: a kind with nothing published still
- *  gets its entry and shows the empty state when picked, rather than vanishing
- *  and reappearing with the catalogue. Website clone is a Home-only entry and
- *  stays out of Community. */
-export const COMMUNITY_MORE_TYPES: readonly TemplateType[] = ['HyperFrames', 'Video', 'Audio', 'Live Artifact', 'WebGL'];
-
-export const TEMPLATE_TYPE_ORDER: TemplateType[] = [...COMMUNITY_TAB_TYPES, ...COMMUNITY_MORE_TYPES];
+/** Local preview only covers retained presentation and image templates. */
+export const COMMUNITY_TAB_TYPES: readonly TemplateType[] = ['Slides', 'Image'];
+export const COMMUNITY_MORE_TYPES: readonly TemplateType[] = [];
+export const TEMPLATE_TYPE_ORDER: TemplateType[] = [...COMMUNITY_TAB_TYPES];
 
 /** The Community grid is the plugin catalogue seen through the artifact a user
  *  wants to make. Membership comes from the shared facet derivation in
@@ -86,29 +64,15 @@ export const TEMPLATE_TYPE_ORDER: TemplateType[] = [...COMMUNITY_TAB_TYPES, ...C
  *  re-derive categories locally. */
 const FACET_CATEGORY_TYPE: Record<string, TemplateType> = {
   'deck': 'Slides',
-  'prototype': 'Prototype',
-  'document': 'Document',
-  'live-artifact': 'Live Artifact',
   'image': 'Image',
-  'video': 'Video',
-  'hyperframes': 'HyperFrames',
-  'audio': 'Audio',
-  'webgl': 'WebGL',
 };
 
 // The type tabs are rendered from the catalogue's `type` field, which is
 // a data value rather than copy. Map it onto a translated label so the tab row
 // is not the one English strip on an otherwise localized page.
 export const TEMPLATE_TYPE_LABEL_KEY: Record<TemplateType, keyof Dict> = {
-  'Prototype': 'community.typePrototype',
-  'Live Artifact': 'community.typeLiveArtifact',
   'Slides': 'community.typeSlides',
-  'Document': 'community.typeDocument',
   'Image': 'community.typeImage',
-  'Video': 'community.typeVideo',
-  'HyperFrames': 'community.typeHyperFrames',
-  'Audio': 'community.typeAudio',
-  'WebGL': 'community.typeWebGL',
 };
 
 // Card accents tint the thumbnail plate and the fallback preview page. The
@@ -326,7 +290,7 @@ export function TemplatePreviewModal({
 }
 
 export function isPromptArtifact(template: TemplateDemo): boolean {
-  return template.type === 'Image' || template.type === 'Video' || template.type === 'Audio';
+  return template.type === 'Image';
 }
 
 export function templateActionLabel(template: TemplateDemo): string {

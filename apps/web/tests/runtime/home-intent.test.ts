@@ -16,9 +16,9 @@ afterEach(() => {
 describe('home-intent latch', () => {
   it('queues a chip id and consumes it exactly once', () => {
     expect(hasPendingHomeChip()).toBe(false);
-    requestHomeChip('prototype');
+    requestHomeChip('deck');
     expect(hasPendingHomeChip()).toBe(true);
-    expect(consumePendingHomeChip()).toBe('prototype');
+    expect(consumePendingHomeChip()).toBe('deck');
     // Second consume returns null — a one-shot latch, not a sticky default.
     expect(consumePendingHomeChip()).toBeNull();
     expect(hasPendingHomeChip()).toBe(false);
@@ -28,17 +28,17 @@ describe('home-intent latch', () => {
     const handler = vi.fn();
     window.addEventListener(HOME_CHIP_INTENT_EVENT, handler);
     try {
-      requestHomeChip('prototype');
+      requestHomeChip('deck');
       expect(handler).toHaveBeenCalledTimes(1);
       const event = handler.mock.calls[0]![0] as CustomEvent;
-      expect(event.detail).toMatchObject({ chipId: 'prototype' });
+      expect(event.detail).toMatchObject({ chipId: 'deck' });
     } finally {
       window.removeEventListener(HOME_CHIP_INTENT_EVENT, handler);
     }
   });
 
   it('keeps the latest requested chip when called twice before consume', () => {
-    requestHomeChip('prototype');
+    requestHomeChip('deck');
     requestHomeChip('deck');
     expect(consumePendingHomeChip()).toBe('deck');
   });

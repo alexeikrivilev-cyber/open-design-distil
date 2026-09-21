@@ -11,15 +11,13 @@
 // Copy is localised: each scenario carries a `textKey` into the i18n Dict
 // (`homeHero.carousel.*`), resolved with `t()` at render time in HomeHero so
 // the typed placeholder AND the submitted query follow the user's locale. The
-// resolved `{ id, text, chipId, prototypeSubtypeId? }` shape
-// (PlaceholderScenario) is what flows to the carousel and the submit path.
+// resolved `{ id, text, chipId }` shape (PlaceholderScenario) is what flows to
+// the carousel and the submit path.
 //
-// `chipId` must match an `apply-scenario` create chip id in `HOME_HERO_CHIPS`,
-// and `prototypeSubtypeId` — when a line belongs to one of that chip's
-// second-level scenes rather than to the chip at large — a scene slug under it;
-// `home-hero-placeholder-scenarios.test.ts` asserts every binding resolves and
-// every `textKey` is present in the English Dict, so a renamed chip or a
-// missing translation can't silently break the one-click create.
+// `chipId` must match an `apply-scenario` create chip id in `HOME_HERO_CHIPS`;
+// tests assert every binding resolves and every `textKey` is present in the
+// English Dict, so a renamed chip or missing translation cannot silently break
+// the one-click create.
 
 import type { Dict } from '../../i18n/types';
 import type { ChatSessionMode } from '@open-design/contracts';
@@ -33,11 +31,6 @@ export interface PlaceholderScenario {
   text: string;
   // Create-rail chip id the scenario binds on submit (the "template").
   chipId: string;
-  // Second-level scene under `chipId` the scenario belongs to, when it is
-  // specific to one (Mobile app, Wireframe). Submitting binds the parent chip
-  // with this scene selected — the scene is a metadata refinement of the
-  // template, not a template of its own.
-  prototypeSubtypeId?: string;
   // Optional per-turn mode for in-project follow-up scenarios.
   sessionMode?: ChatSessionMode;
 }
@@ -48,7 +41,6 @@ export interface PlaceholderScenarioDef {
   id: string;
   textKey: keyof Dict;
   chipId: string;
-  prototypeSubtypeId?: string;
 }
 
 // i18n key for the idle hint shown as the editor's accessible placeholder while
@@ -58,40 +50,16 @@ export interface PlaceholderScenarioDef {
 export const PLACEHOLDER_BASE_HINT_KEY: keyof Dict = 'homeHero.carousel.hint';
 
 export const PLACEHOLDER_SCENARIO_DEFS: ReadonlyArray<PlaceholderScenarioDef> = [
-  { id: 'one-page-brief', textKey: 'homeHero.carousel.onePageBrief', chipId: 'document' },
   { id: 'notes-to-deck', textKey: 'homeHero.carousel.notesToDeck', chipId: 'deck' },
-  { id: 'signup-flow', textKey: 'homeHero.carousel.signupFlow', chipId: 'prototype' },
-  { id: 'improve-brief', textKey: 'homeHero.carousel.improveBrief', chipId: 'document' },
-  { id: 'loading-animation', textKey: 'homeHero.carousel.loadingAnimation', chipId: 'hyperframes' },
   { id: 'team-update-slides', textKey: 'homeHero.carousel.teamUpdateSlides', chipId: 'deck' },
-  { id: 'orders-dashboard', textKey: 'homeHero.carousel.ordersDashboard', chipId: 'prototype' },
-  {
-    id: 'product-detail',
-    textKey: 'homeHero.carousel.productDetail',
-    chipId: 'prototype',
-    prototypeSubtypeId: 'wireframe',
-  },
-  { id: 'case-study', textKey: 'homeHero.carousel.caseStudy', chipId: 'document' },
-  { id: 'landing-intro', textKey: 'homeHero.carousel.landingIntro', chipId: 'prototype' },
   { id: 'pitch-deck', textKey: 'homeHero.carousel.pitchDeck', chipId: 'deck' },
-  {
-    id: 'app-idea',
-    textKey: 'homeHero.carousel.appIdea',
-    chipId: 'prototype',
-    prototypeSubtypeId: 'mobile',
-  },
-  {
-    id: 'landing-layout',
-    textKey: 'homeHero.carousel.landingLayout',
-    chipId: 'prototype',
-    prototypeSubtypeId: 'wireframe',
-  },
+  { id: 'product-detail', textKey: 'homeHero.carousel.productDetail', chipId: 'image' },
+  { id: 'landing-intro', textKey: 'homeHero.carousel.landingIntro', chipId: 'image' },
+  { id: 'landing-layout', textKey: 'homeHero.carousel.landingLayout', chipId: 'image' },
 ];
 
 export interface BuildPlaceholderScenariosInput {
   activeChipId: string | null;
-  // Second-level scene selected under `activeChipId`, when it has one.
-  activePrototypeSubtypeId?: string | null;
   resolveTextKey: (key: keyof Dict) => string;
   examplesForChip?: (chipId: string) => ReadonlyArray<string>;
   fallbackForChip?: (chipId: string) => string | null;
@@ -105,32 +73,19 @@ function resolveScenario(
   return {
     id: def.id,
     chipId: def.chipId,
-    ...(def.prototypeSubtypeId ? { prototypeSubtypeId: def.prototypeSubtypeId } : {}),
     text: resolveTextKey(def.textKey),
   };
 }
 
 export function buildPlaceholderScenarios({
   activeChipId,
-  activePrototypeSubtypeId = null,
   resolveTextKey,
   examplesForChip = () => [],
   fallbackForChip = () => null,
   scenarioDefs = PLACEHOLDER_SCENARIO_DEFS,
 }: BuildPlaceholderScenariosInput): PlaceholderScenario[] {
   if (activeChipId) {
-    // A selected scene narrows its parent's lines to its own — but only when it
-    // curates some. A scene with no lines of its own (Dashboards, Apps, …)
-    // keeps showing the parent's, which in turn never include another scene's.
-    const sceneScenarioDefs = activePrototypeSubtypeId
-      ? scenarioDefs.filter(
-          (def) =>
-            def.chipId === activeChipId && def.prototypeSubtypeId === activePrototypeSubtypeId,
-        )
-      : [];
-    const chipScenarioDefs = sceneScenarioDefs.length > 0
-      ? sceneScenarioDefs
-      : scenarioDefs.filter((def) => def.chipId === activeChipId && !def.prototypeSubtypeId);
+    const chipScenarioDefs = scenarioDefs.filter((def) => def.chipId === activeChipId);
     if (chipScenarioDefs.length > 0) {
       return chipScenarioDefs.map((def) => resolveScenario(def, resolveTextKey));
     }

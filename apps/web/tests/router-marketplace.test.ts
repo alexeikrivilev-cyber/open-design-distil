@@ -3,10 +3,10 @@
 import { describe, expect, it } from 'vitest';
 import { buildPath, parseRoute, type Route } from '../src/router';
 
-describe('router /marketplace', () => {
-  it('parses /marketplace as the catalog grid route', () => {
-    expect(parseRoute('/marketplace')).toEqual({ kind: 'marketplace' });
-    expect(parseRoute('/marketplace/')).toEqual({ kind: 'marketplace' });
+describe('router /marketplace compatibility', () => {
+  it('redirects the retired marketplace index to the local plugins catalog', () => {
+    expect(parseRoute('/marketplace')).toEqual({ kind: 'home', view: 'plugins' });
+    expect(parseRoute('/marketplace/')).toEqual({ kind: 'home', view: 'plugins' });
   });
 
   it('parses /marketplace/<pluginId> as a detail route', () => {
@@ -30,7 +30,6 @@ describe('router /marketplace', () => {
 
   it('round-trips through buildPath', () => {
     for (const route of [
-      { kind: 'marketplace' } as Route,
       { kind: 'marketplace-detail', pluginId: 'sample-plugin' } as Route,
     ]) {
       expect(parseRoute(buildPath(route))).toEqual(route);

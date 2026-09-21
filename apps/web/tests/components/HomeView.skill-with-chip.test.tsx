@@ -23,8 +23,6 @@ vi.mock('../../src/collab/useWorkspaceContext', async (importOriginal) => {
 });
 
 import { HomeView } from '../../src/components/HomeView';
-import { HOME_APPLY_TEMPLATE_EVENT } from '../../src/components/home-hero/chips';
-import { requestHomeChip } from '../../src/runtime/home-intent';
 import type { PluginLoopSubmit } from '../../src/components/PluginLoopHome';
 import { homeHeroPromptText, setHomeHeroPrompt } from '../helpers/home-hero-lexical';
 
@@ -89,17 +87,6 @@ const BASE_SKILL: SkillSummary = {
 
 // `od.mode: 'prototype'` — deliberately DIFFERENT from the 幻灯片 chip below.
 const PROTOTYPE_SKILL: SkillSummary = BASE_SKILL;
-
-// `od.mode: 'deck'` — deliberately DIFFERENT from the 原型 chip below.
-const DECK_SKILL: SkillSummary = {
-  ...BASE_SKILL,
-  id: 'deck-lab',
-  name: 'Deck Lab',
-  description: 'Create a focused slide deck.',
-  triggers: ['deck', 'slides'],
-  mode: 'deck',
-  examplePrompt: 'Design a focused investor deck.',
-};
 
 const APPLY_RESULT = {
   query: 'applied',
@@ -169,22 +156,6 @@ async function settle() {
 }
 
 
-
-
-// The hero no longer renders a second-level scene row; a Prototype scene is
-// reached the way other surfaces hand one off — a queued chip intent naming the
-// retired top-level id, which HomeView folds onto 原型 + that scene.
-async function pickPrototypeScene(scene: string) {
-  await act(async () => {
-    requestHomeChip(scene);
-  });
-  await waitFor(() => {
-    expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Prototype');
-    expect(JSON.parse(window.localStorage.getItem('open-design:home-composer:chip') ?? '{}'))
-      .toMatchObject({ chipId: 'prototype', prototypeSubtypeId: scene });
-  });
-}
-
 // The @-mention popover's own pick path: type an `@query` into the live Lexical
 // editor, then mouseDown the listed option. This is exactly what
 // `HomeHero.pickSkill` (HomeHero.tsx:991) is wired to, which forwards to
@@ -201,7 +172,7 @@ function renderHome(onSubmit: SubmitSpy) {
   return render(
     <HomeView
       projects={[]}
-      skills={[PROTOTYPE_SKILL, DECK_SKILL]}
+      skills={[PROTOTYPE_SKILL]}
       onSubmit={onSubmit}
       onOpenProject={() => undefined}
     />,
@@ -251,31 +222,5 @@ describe('HomeView — @-mentioning a Skill on top of a picked task type', () =>
     expect(payload.projectMetadata).toEqual({ kind: 'deck' });
     // …and the Skill still rides along.
     expect(payload.skillId).toBe(PROTOTYPE_SKILL.id);
-  });
-
-  it('keeps the 原型 + 移动应用 scene refinement when a deck-mode Skill is mentioned', async () => {
-    stubFetch();
-    stubAnimationFrame();
-    const onSubmit = submitSpy();
-    renderHome(onSubmit);
-
-    // 1. Task type, then its second-level scene.
-    await pickHomeTemplate('prototype');
-    await pickPrototypeScene('mobile');
-
-    // 2. A Skill whose `od.mode` is `deck` — again, not a task-type pick.
-    await mentionSkill('@deck', /deck lab/i);
-
-    const payload = await submitAndRead(onSubmit);
-
-    expect(payload.automaticStrategyTaskProfile ?? null).toBe('prototype');
-    expect(payload.projectKind).toBe('prototype');
-    // The scene's refinement is the whole reason the user picked it.
-    expect(payload.projectMetadata).toEqual({
-      kind: 'prototype',
-      platform: 'auto',
-      platformTargets: ['mobile-ios', 'mobile-android'],
-    });
-    expect(payload.skillId).toBe(DECK_SKILL.id);
   });
 });
