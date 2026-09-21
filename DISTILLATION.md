@@ -10,6 +10,10 @@ Success is not the maximum number of deleted files. Success is removing unrelate
 
 We are in repository distillation. **Do not implement the new presentation pipeline yet.**
 
+The first reversible surface-reduction batch is complete: the default Home/create rail now exposes `deck` and `image` only. Legacy prototype/document/video/audio/WebGL/live-artifact and plugin/Figma implementations are intentionally still present behind compatibility paths. Treat them as mapped removal candidates, not as active product scope, until their reverse dependencies and persistence coupling are proven.
+
+The next batch must inspect remaining navigation/routes and catalog registries, then remove one unrelated family at a time. Do not turn the temporary compatibility retention into a permanent second product.
+
 Correct order:
 
 1. Reset canonical instructions/product context.

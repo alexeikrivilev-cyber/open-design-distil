@@ -1,9 +1,8 @@
 // @vitest-environment jsdom
 //
-// OPEND-3146: the Home type row keeps 原型 / 幻灯片 / 文档 inline and folds
-// EVERY other artifact type into 更多, in one product-fixed order. Nothing an
-// earlier row offered may be lost to the fold, and the fold's order is a
-// product list, not catalog order.
+// Distilled Home scope: the Home type row keeps the presentation deck inline
+// and the retained image-generation path behind 更多. Legacy artifact types
+// remain readable in compatibility data but are not new-product entry points.
 
 import { cleanup, fireEvent, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -20,15 +19,7 @@ afterEach(() => {
   cleanup();
 });
 
-const EXPECTED_MORE_ORDER = [
-  'image',
-  'hyperframes',
-  'web-clone',
-  'video',
-  'audio',
-  'live-artifact',
-  'webgl',
-];
+const EXPECTED_MORE_ORDER = ['image'];
 
 function renderRow() {
   const onPick = vi.fn();
@@ -44,8 +35,8 @@ function renderRow() {
 }
 
 describe('TypePillRow — 更多 (OPEND-3146)', () => {
-  it('keeps the three lead types inline and lists the other seven behind 更多 in product order', () => {
-    expect([...HOME_TYPE_ROW_IDS]).toEqual(['prototype', 'deck', 'document']);
+  it('keeps the deck inline and the image path behind 更多', () => {
+    expect([...HOME_TYPE_ROW_IDS]).toEqual(['deck']);
     expect([...HOME_TYPE_ROW_MORE_IDS]).toEqual(EXPECTED_MORE_ORDER);
 
     renderRow();
@@ -74,11 +65,11 @@ describe('TypePillRow — 更多 (OPEND-3146)', () => {
     expect(duplicates).toEqual([]);
   });
 
-  it('picks a 更多 entry and closes the popover', () => {
+  it('picks the retained image entry and closes the popover', () => {
     const { onPick } = renderRow();
     fireEvent.click(screen.getByTestId('home-hero-type-pills-more'));
-    fireEvent.click(screen.getByTestId('home-hero-type-pill-webgl-more'));
-    expect(onPick).toHaveBeenCalledWith(expect.objectContaining({ id: 'webgl' }));
+    fireEvent.click(screen.getByTestId('home-hero-type-pill-image-more'));
+    expect(onPick).toHaveBeenCalledWith(expect.objectContaining({ id: 'image' }));
     expect(screen.queryByTestId('home-hero-type-pills-popover')).toBeNull();
   });
 });

@@ -378,58 +378,32 @@ export const HOME_HERO_CHIPS: ReadonlyArray<HomeHeroChip> = [
 ];
 
 export function chipsForGroup(group: ChipGroup): HomeHeroChip[] {
-  return HOME_HERO_CHIPS.filter((c) => c.group === group);
+  const chips = HOME_HERO_CHIPS.filter((c) => c.group === group);
+  if (group === 'create') return chips;
+  // Plugin authoring, Figma migration, and the marketplace are upstream
+  // product surfaces, not part of the presentation foundation.
+  return chips.filter((chip) => VISIBLE_MIGRATE_CHIP_IDS.has(chip.id));
 }
 
-// Fixed Home information architecture. Only these ten output types are
-// top-level choices. Action-only create entries (for example Create Design
-// System) are intentionally excluded. Prototype leads and Slide deck follows;
-// the media scenarios trail so at typical widths they live in the 更多
-// overflow popover rather than the visible pill row.
+// Distilled Home information architecture. The default path is a corporate
+// deck, with image generation retained for presentation visual slots. The
+// old prototype/document/video/audio/WebGL/live-artifact entries stay in the
+// compatibility catalog above so existing project metadata and handoffs can
+// still be read, but they are not new-product entry points.
 export const CREATE_RAIL_ORDER = [
-  'prototype',
   'deck',
-  'document',
   'image',
-  'web-clone',
-  'hyperframes',
-  'webgl',
-  'live-artifact',
-  'video',
-  'audio',
 ] as const;
 
-// The Home type row is an explicit product decision, not a width computation
-// (OPEND-3146, 2026-09-16): three entry types stay inline, and 更多 holds EVERY
-// other create type in this exact order, so no artifact kind loses its
-// discoverable entry to the fold. The two lists together cover
-// `CREATE_RAIL_ORDER`; `TypePillRow.more-order.test.tsx` pins both.
-export const HOME_TYPE_ROW_IDS: readonly string[] = ['prototype', 'deck', 'document'];
-export const HOME_TYPE_ROW_MORE_IDS: readonly string[] = [
-  'image',
-  'hyperframes',
-  'web-clone',
-  'video',
-  'audio',
-  'live-artifact',
-  'webgl',
-];
+// Keep the two lists explicit: tests and the pill-row layout use them as the
+// product boundary, while the compatibility catalog remains separate.
+export const HOME_TYPE_ROW_IDS: readonly string[] = ['deck'];
+export const HOME_TYPE_ROW_MORE_IDS: readonly string[] = ['image'];
 
-// Chip ids the onboarding "build a design system" teaser intentionally omits.
-// Video and Audio are pure-media outputs and the least central to the
-// design-system story, so they are omitted to keep the teaser chips to a
-// single tidy row. Website clone starts
-// from someone else's site rather than the user's design system, so it stays
-// off the design-system teaser too.
-const ONBOARDING_ARTIFACT_OMIT = new Set<string>(['web-clone', 'video', 'audio']);
+const VISIBLE_MIGRATE_CHIP_IDS = new Set<string>(['template']);
 
 // The artifact chips shown on the onboarding "build a design system" step — a
-// curated single-row subset of the create rail. Derived from CREATE_RAIL_ORDER
-// (not a separately maintained list) so it stays in the same priority order as
-// the Home rail and never drifts from the real template catalog.
-export const ONBOARDING_ARTIFACT_CHIP_IDS = CREATE_RAIL_ORDER.filter(
-  (id) => !ONBOARDING_ARTIFACT_OMIT.has(id),
-);
+export const ONBOARDING_ARTIFACT_CHIP_IDS = [...CREATE_RAIL_ORDER];
 
 // The top-level Home chips in their exact product order. Action-only catalog
 // entries must not leak into the rail or template picker.

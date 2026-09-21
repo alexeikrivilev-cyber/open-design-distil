@@ -1,5 +1,7 @@
 # Quickstart
 
+> **Fork scope:** this repository is in safe distillation toward a focused corporate-presentation compiler. The default product surface is intentionally limited to presentations and image assets while unrelated upstream modes are being retired in dependency-safe batches. Read [`AGENTS.md`](AGENTS.md) and [`DISTILLATION.md`](DISTILLATION.md) before making changes.
+
 <p align="center"><b>English</b> · <a href="docs/i18n/QUICKSTART.pt-BR.md">Português (Brasil)</a> · <a href="docs/i18n/QUICKSTART.de.md">Deutsch</a> · <a href="docs/i18n/QUICKSTART.fr.md">Français</a> · <a href="docs/i18n/QUICKSTART.ja-JP.md">日本語</a> · <a href="docs/i18n/QUICKSTART.ko.md">한국어</a> · <a href="docs/i18n/QUICKSTART.zh-CN.md">简体中文</a> · <a href="docs/i18n/QUICKSTART.zh-TW.md">繁體中文</a> · <a href="docs/i18n/QUICKSTART.th.md">ภาษาไทย</a></p>
 
 Run the full product locally.

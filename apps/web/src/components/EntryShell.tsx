@@ -1244,7 +1244,7 @@ export function EntryShell({
       ? onProviderModelsCacheChange!
       : setLocalProviderModelsCache;
   const [newProjectInitialTab, setNewProjectInitialTab] =
-    useState<CreateTab>('prototype');
+    useState<CreateTab>('deck');
   const [integrationTab, setIntegrationTab] = useState<IntegrationTab>(integrationInitialTab);
   // Lazy initializer, so a handoff published by a surface that then navigated
   // here — the `/marketplace/<id>` detail route, which `App` renders outside
@@ -1352,7 +1352,7 @@ export function EntryShell({
     changeView('integrations');
   }
 
-  function openNewProject(tab: CreateTab = 'prototype') {
+  function openNewProject(tab: CreateTab = 'deck') {
     setNewProjectInitialTab(tab);
     setNewProjectOpen(true);
   }

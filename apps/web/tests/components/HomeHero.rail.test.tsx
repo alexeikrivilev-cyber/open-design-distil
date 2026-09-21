@@ -175,7 +175,7 @@ describe('HomeHero intent rail', () => {
     expect(screen.queryByTestId('home-hero-type-tabs')).toBeNull();
     expect(screen.queryByTestId('home-hero-rail-video')).toBeNull();
     const node = screen.getByTestId('home-hero-template-trigger');
-    expect(node.textContent).toContain('Video');
+    expect(node.textContent).toContain('Creation type');
   });
 
   it('does not reserve an empty active-context row for a hidden chip-bound plugin', () => {
@@ -188,7 +188,7 @@ describe('HomeHero intent rail', () => {
     });
 
     expect(document.querySelector('.home-hero__active')).toBeNull();
-    expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Prototype');
+    expect(screen.getByTestId('home-hero-template-trigger').textContent).toContain('Creation type');
   });
 
   it('switches the creation type without a clear control', () => {

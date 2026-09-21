@@ -290,7 +290,7 @@ export function NewProjectPanel({
   connectorsLoading = false,
   onOpenConnectorsTab,
   loading = false,
-  initialTab = 'prototype',
+  initialTab = 'deck',
 }: Props) {
   const t = useT();
   const { locale } = useI18n();

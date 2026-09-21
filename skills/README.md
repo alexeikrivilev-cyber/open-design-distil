@@ -1,5 +1,7 @@
 # Skills
 
+> **Distillation rule:** this fork keeps a small presentation-oriented skill surface. Presentation planning, template/design-system understanding, image assets, audit/repair, preview, and export are in scope. Treat upstream web/prototype/video/audio/marketplace catalog entries as removal candidates only after dependency mapping; do not mistake their presence in this inherited directory for an active product requirement.
+
 This directory contains **functional skills**: capabilities the agent invokes to do work on user input, such as briefs, audits, utilities, and asset packagers. Each folder has a `SKILL.md` and may include `assets/` or `references/`.
 
 Rendering shapes for prototypes, decks, documents, images, video, and audio belong in [`design-templates/`](../design-templates/), not here. The classification rule and migration history live in [`specs/current/skills-and-design-templates.md`](../specs/current/skills-and-design-templates.md).

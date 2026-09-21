@@ -1,4 +1,8 @@
-<h1 align="center">OpenDesign: The open-source Claude Design alternative</h1>
+<h1 align="center">Open Design Distil — presentation compiler foundation</h1>
+
+> **Fork status — safe distillation in progress.** This fork is being reduced to a focused corporate-presentation workflow: understand a PPTX template, plan a deck, generate constrained alternatives, review by exception, repair selectively, and export editable PPTX/PDF/HTML. The upstream product-tour material below is retained as historical implementation reference, not as the roadmap for this fork.
+>
+> Before changing the repository, read [`AGENTS.md`](AGENTS.md), [`CONTEXT.md`](CONTEXT.md), [`DISTILLATION.md`](DISTILLATION.md), and [`INVENTORY.md`](INVENTORY.md). New presentation-pipeline implementation is intentionally out of scope until distillation and stabilization are complete.
 
 > ⚡ **[OpenDesign Cloud — the official model service.](https://open-design.ai/zh/pricing/)** One recharge to use both agent and image models inside OpenDesign: GPT, Claude, and DeepSeek for agents; GPT Image 2.0, Seedream 5.0 Pro, and Nano Banana 2.0 for images.
 >

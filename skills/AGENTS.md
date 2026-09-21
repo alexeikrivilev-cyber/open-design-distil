@@ -1,5 +1,7 @@
 # skills
 
+> **Fork scope:** this catalog is being narrowed for the presentation compiler. Keep skills that support template understanding, design systems, deck planning, image assets, audit/repair, preview, and export. Upstream web, prototype, video, audio, marketplace, and unrelated creative entries are not product scope; do not add new entries for them while distillation is in progress. Before deleting or moving a skill, trace daemon discovery, local overrides, design-template references, and tests.
+
 This directory holds **functional skills** — capabilities the agent
 invokes mid-task to do work on user input. Each skill is a folder with a
 `SKILL.md` (frontmatter + body) and any side files (`assets/`,
